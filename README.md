@@ -1,16 +1,17 @@
 # poc1
 
-A new Flutter project.
+Proof of Concept mobile UI written in DART / Flutter
 
-## Getting Started
+## Configuration
 
-This project is a starting point for a Flutter application.
+This Flutter application implements 
+- splashscreen
+- login screen (with Firebase)
+- tabview (4 tabs)
+- listview with default list of property listings
 
-A few resources to get you started if this is your first Flutter project:
+This Flutter application is also
+- Null Safe
+- Linked with Firebase poc1 project
+- Firestore has property listings
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
