@@ -1,7 +1,8 @@
+import 'package:easy_splash_screen/easy_splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:splashscreen/splashscreen.dart';
+//import 'package:splashscreen/splashscreen.dart';
 import 'homelist.dart';
 import 'package:poc1/signup.dart';
 import 'dart:developer';
@@ -39,7 +40,22 @@ class IntroScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     User? result = FirebaseAuth.instance.currentUser;
-    return new SplashScreen(
+    return EasySplashScreen(
+      logo: Image.network('https://i.imgur.com/pnh0cpW.png'),
+      title: Text(
+        "LivingCo",
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      backgroundColor: Colors.grey.shade400,
+      showLoader: true,
+      loadingText: Text("Please wait..."),
+      navigator: HomeList(uid: 'test'),
+      durationInSeconds: 5,
+    );
+    /*return new SplashScreen(
       seconds: 5,
       navigateAfterSeconds:
           //result != null ? HomeList(uid: result.uid) : SignUp(),
@@ -52,6 +68,6 @@ class IntroScreen extends StatelessWidget {
       loaderColor: Colors.greenAccent,
       loadingText: Text("Loading"),
       useLoader: true,
-    );
+    );*/
   }
 }
