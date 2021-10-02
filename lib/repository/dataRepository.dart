@@ -18,6 +18,6 @@ class DataRepository {
 
   // Update pet class
   updateHome(Home home) async {
-    await collection.doc(home.reference.id).update(home.toJson());
+    await collection.doc(home.reference?.id).update(home.toJson());
   }
 }

@@ -24,7 +24,7 @@ class Home {
   String size = '';
   String subDist = '';
   String yearbuilt = '';
-  DocumentReference reference;
+  DocumentReference? reference;
 
   Home(
       this.id,
@@ -50,7 +50,7 @@ class Home {
       this.size,
       this.subDist,
       this.yearbuilt,
-      this.reference);
+      [this.reference]);
 
   factory Home.fromSnapshot(DocumentSnapshot<Map<String, dynamic>> snapshot) {
     Home newHome = Home.fromJson(snapshot.data()!);
@@ -68,29 +68,28 @@ class Home {
 Home _HomeFromJson(Map<String, dynamic> json) {
   return Home(
       json['id'] as String,
-      json['address'] as String,
-      json['ID'] as String,
-      json['latitude'] as String,
-      json['longitutde'] as String,
-      json['leasing'] as String,
-      json['noOfBathrooms'] as String,
-      json['noOfBedrooms'] as String,
-      json['noOfHawkers'] as String,
-      json['noOfMalls'] as String,
-      json['noOfParks'] as String,
-      json['noOfPreschools'] as String,
-      json['noOfSchools'] as String,
-      json['noOfStations'] as String,
-      json['noOfSupermarkets'] as String,
-      json['plotRatio'] as String,
-      json['price'] as String,
-      json['propertiesName'] as String,
-      json['propertyType'] as String,
-      json['rental'] as String,
-      json['size'] as String,
-      json['subdistrict'] as String,
-      json['yearOfBuilt'] as String,
-      json['reference'] as DocumentReference);
+      (json['address'] ?? "") as String,
+      (json['ID'] ?? "") as String,
+      (json['latitude'] ?? "") as String,
+      (json['longitude'] ?? "") as String,
+      (json['leasing'] ?? "") as String,
+      (json['noOfBathrooms'] ?? "") as String,
+      (json['noOfBedrooms'] ?? "") as String,
+      (json['noOfHawkers'] ?? "") as String,
+      (json['noOfMalls'] ?? "") as String,
+      (json['noOfParks'] ?? "") as String,
+      (json['noOfPreschools'] ?? "") as String,
+      (json['noOfSchools'] ?? "") as String,
+      (json['noOfStations'] ?? "") as String,
+      (json['noOfSupermarkets'] ?? "") as String,
+      (json['plotRatio'] ?? "") as String,
+      (json['price'] ?? "") as String,
+      (json['propertiesName'] ?? "") as String,
+      (json['propertyType'] ?? "") as String,
+      (json['rental'] ?? "") as String,
+      (json['size'] ?? "") as String,
+      (json['subdistrict'] ?? "") as String,
+      (json['yearOfBuilt'] ?? "") as String);
 }
 
 Map<String, dynamic> _HomeToJson(Home instance) => <String, dynamic>{
