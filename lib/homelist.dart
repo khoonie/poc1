@@ -9,17 +9,23 @@ import 'package:poc1/homeDetails.dart';
 import 'dart:developer';
 
 class HomeList extends StatefulWidget {
-  final String? uid;
+  const HomeList({Key? key, required User user})
+      : _user = user,
+        super(key: key);
+
+  final User _user;
+
+  //final String? uid;
   final String title = "LivingCo";
 
-  HomeList({this.uid});
+//  HomeList({this.uid});
   @override
   _HomeListState createState() => _HomeListState();
 }
 
 class _HomeListState extends State<HomeList> {
   final DataRepository repository = DataRepository();
-
+  late User _user;
   @override
   Widget build(BuildContext context) {
     return _buildHome(context);
