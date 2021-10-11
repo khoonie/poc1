@@ -49,7 +49,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.deepOrange,
-        title: Text('Title goes here'),
+        title: Text('My Account Info'),
       ),
       body: SafeArea(
         child: Padding(
@@ -89,7 +89,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
               Text(
                 'Hello',
                 style: TextStyle(
-                  color: Colors.orange,
+                  color: Colors.white,
                   fontSize: 26,
                 ),
               ),
@@ -114,7 +114,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
               Text(
                 'You are now signed in using Google',
                 style: TextStyle(
-                    color: Colors.orange.withOpacity(0.8),
+                    color: Colors.white.withOpacity(0.8),
                     fontSize: 14,
                     letterSpacing: 0.2),
               ),

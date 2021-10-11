@@ -62,7 +62,7 @@ class IntroScreen extends StatelessWidget {
       loadingText: Text("Please wait..."),
       //navigator: HomeList(uid: 'test'),
       navigator: SignUp(),
-      durationInSeconds: 5,
+      durationInSeconds: 2,
     );
   }
 }
