@@ -72,13 +72,117 @@ class _HomeListState extends State<HomeList> {
         )
       ],
     );
+
     final listApp = Container(
+        color: Colors.blueGrey,
         child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: repository.getStream(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) return LinearProgressIndicator();
               return _buildList(context, snapshot.data!.docs);
             }));
+    final promoApp = Container(child: (Text('Best Sellers')));
+    final popularApp = Container(child: (Text('Popular')));
+    final listAppSelections = DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.orange,
+          flexibleSpace: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TabBar(
+                tabs: [
+                  Tab(text: 'Listing'),
+                  Tab(text: 'Promotions'),
+                  Tab(text: 'Popular'),
+                ],
+              )
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [listApp, promoApp, popularApp],
+        ),
+      ),
+    );
+
+    final recommendApp = Container(child: (Text('Recommendations')));
+    final surveyApp = Container(child: (Text('Survey')));
+    final ideasAppSelections = DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          flexibleSpace: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TabBar(
+                tabs: [
+                  Tab(text: 'Survey'),
+                  Tab(text: 'Recommendations'),
+                ],
+              )
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [surveyApp, recommendApp],
+        ),
+      ),
+    );
+
+    final magazineApp = Container(child: (Text('Magazine')));
+    final statsApp = Container(child: (Text('Statistics')));
+    final newProjectsApp = Container(child: (Text('New Projects/Promo')));
+    final newsAppSelections = DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          flexibleSpace: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TabBar(
+                tabs: [
+                  Tab(text: 'Magazine'),
+                  Tab(text: 'Ind Statistics'),
+                  Tab(text: 'New Projects'),
+                ],
+              )
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [magazineApp, statsApp, newProjectsApp],
+        ),
+      ),
+    );
+
+    final scheduleApp = Container(child: (Text('Scheduler')));
+    final agentIntroApp = Container(child: (Text('Agent Intro and Promo')));
+    final agentChatApp = Container(child: (Text('Agent Chat')));
+    final agentsAppSelections = DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          flexibleSpace: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TabBar(
+                tabs: [
+                  Tab(text: 'Schedules'),
+                  Tab(text: 'Agent YouTube'),
+                  Tab(text: 'Agent Chat'),
+                ],
+              )
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [scheduleApp, agentIntroApp, agentChatApp],
+        ),
+      ),
+    );
+
     final accApp = Scaffold(
         backgroundColor: Colors.blueGrey,
         body: Center(
@@ -166,19 +270,10 @@ class _HomeListState extends State<HomeList> {
                 ))));
 
     final List<Widget> _pages = <Widget>[
-      listApp,
-      Icon(
-        Icons.lightbulb_outline,
-        size: 150,
-      ),
-      Icon(
-        Icons.book_online,
-        size: 150,
-      ),
-      Icon(
-        Icons.real_estate_agent,
-        size: 150,
-      ),
+      listAppSelections,
+      ideasAppSelections,
+      newsAppSelections,
+      agentsAppSelections,
       accApp
     ];
 
@@ -187,8 +282,10 @@ class _HomeListState extends State<HomeList> {
 //      appBar: AppBar(
 //        title: const Text('Living Co Listing'),
 //      ),
-      body: Center(
-        child: _pages.elementAt(_selectIndex),
+      body: IndexedStack(
+        //child: _pages.elementAt(_selectIndex),
+        index: _selectIndex,
+        children: _pages,
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
