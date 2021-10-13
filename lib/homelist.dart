@@ -7,6 +7,7 @@ import 'package:poc1/repository/dataRepository.dart';
 import 'package:poc1/model/homes.dart';
 import 'package:poc1/homeDetails.dart';
 import 'package:poc1/signup.dart';
+import 'package:poc1/survey.dart';
 
 import 'authentication.dart';
 
@@ -108,7 +109,46 @@ class _HomeListState extends State<HomeList> {
     );
 
     final recommendApp = Container(child: (Text('Recommendations')));
-    final surveyApp = Container(child: (Text('Survey')));
+    final surveyApp = Scaffold(
+        body: Center(
+            child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Padding(
+          padding: EdgeInsets.all(10.0),
+          child: Text("LivingCo Survey",
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 30,
+                  fontFamily: 'Roboto')),
+        ),
+        Padding(
+          padding: EdgeInsets.all(10.0),
+          child: Text(
+              "This survey will gather information to help us better understand the properties you seek",
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  fontFamily: 'Roboto')),
+        ),
+        Padding(
+            padding: EdgeInsets.all(10.0),
+            child: SignInButtonBuilder(
+              icon: Icons.surfing,
+              text: 'Start the Survey',
+              backgroundColor: Colors.blueGrey,
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => LivingCoSurvey(
+                              user: _user,
+                            )));
+              },
+            )),
+      ],
+    )));
+
     final ideasAppSelections = DefaultTabController(
       length: 2,
       child: Scaffold(
