@@ -3,6 +3,10 @@
    <application
         android:label="poc1"
         android:icon="@mipmap/ic_launcher">
+        <meta-data
+              android:name="com.google.android.geo.API_KEY" 
+              android:value="AIzaSyD1cAmBAMqtYI6yx64Uo1nGbJH4OI0_6Bw"
+            />
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"
@@ -26,8 +30,9 @@
                  Flutter's first frame. -->
             <meta-data
               android:name="io.flutter.embedding.android.SplashScreenDrawable"
-              android:resource="@drawable/launch_background"
-              />
+              android:resource="@drawable/launch_background" 
+            />
+            
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
