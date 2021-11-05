@@ -1,12 +1,12 @@
-import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
+
 import 'package:intl/intl.dart';
 import 'package:poc1/repository/dataRepository.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'model/homes.dart';
 
 typedef DialogCallback = void Function();
@@ -46,6 +46,7 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
   final dateformat = DateFormat('yyyy-MM-dd');
   final Set<Marker> _markers = new Set();
   GoogleMapController? myMapController;
+  CarouselController buttonCarouselController = CarouselController();
 
   String propname = "";
   String proptype = "";
@@ -171,6 +172,79 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
                 )),
               ],
             )),
+        Container(
+          height:
+              250.0, // required because ListView needs a bounding vertical box
+          child: ListView(
+            children: [
+              CarouselSlider(
+                  items: [
+                    Container(
+                      margin: EdgeInsets.all(6.0),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8.0),
+                          image: DecorationImage(
+                            image: NetworkImage(
+                                'https://sg2-cdn.pgimgs.com/listing/23597711/UPHO.130111787.V800/116B-Jalan-Tenteram-Balestier-Toa-Payoh-Singapore.jpg'),
+                            fit: BoxFit.cover,
+                          )),
+                    ),
+                    Container(
+                      margin: EdgeInsets.all(6.0),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8.0),
+                          image: DecorationImage(
+                            image: NetworkImage(
+                                'https://sg1-cdn.pgimgs.com/listing/23597711/UPHO.130111786.V800/116B-Jalan-Tenteram-Balestier-Toa-Payoh-Singapore.jpg'),
+                            fit: BoxFit.cover,
+                          )),
+                    ),
+                    Container(
+                      margin: EdgeInsets.all(6.0),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8.0),
+                          image: DecorationImage(
+                            image: NetworkImage(
+                                'https://sg1-cdn.pgimgs.com/listing/23597711/UPHO.130111784.V800/116B-Jalan-Tenteram-Balestier-Toa-Payoh-Singapore.jpg'),
+                            fit: BoxFit.cover,
+                          )),
+                    )
+                  ],
+                  options: CarouselOptions(
+                    height: 250.0,
+                    enlargeCenterPage: true,
+                    autoPlay: true,
+                    aspectRatio: 16 / 9,
+                    autoPlayCurve: Curves.fastOutSlowIn,
+                    enableInfiniteScroll: true,
+                    autoPlayAnimationDuration: Duration(milliseconds: 800),
+                    viewportFraction: 0.8,
+                  ))
+            ],
+          ),
+        ),
+
+        /* Container(
+          padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+          child: CarouselSlider(
+              options: CarouselOptions(height: 300.0),
+              items: [
+                'https://picsum.photos/250?image=8',
+                'https://picsum.photos/250?image=7'
+              ].map((i) {
+                return Builder(
+                  builder: (BuildContext context) {
+                    return Container(
+                        width: MediaQuery.of(context).size.width,
+                        margin: EdgeInsets.symmetric(horizontal: 1.0),
+                        decoration: BoxDecoration(
+                            color: Colors.lightGreen,
+                            backgroundBlendMode: BlendMode.colorBurn),
+                        child: Image.network(i));
+                  },
+                );
+              }).toList()),
+        ),*/
         Container(
             constraints: BoxConstraints.expand(height: 50.0),
             padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),

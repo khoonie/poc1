@@ -36,6 +36,7 @@ dependencies:
   survey_kit: ^0.0.12
   http: ^0.13.4
   google_maps_flutter: ^2.1.0
+  carousel_slider: ^4.0.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
