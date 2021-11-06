@@ -1,13 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
 import 'package:flutter_signin_button/button_builder.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
+import 'package:poc1/recommendationDetails.dart';
 import 'package:poc1/repository/dataRepository.dart';
 import 'package:poc1/model/homes.dart';
+import 'package:poc1/model/recommendations.dart';
 import 'package:poc1/homeDetails.dart';
 import 'package:poc1/signup.dart';
 import 'package:poc1/survey.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert' as convert;
+import 'package:overlay_support/overlay_support.dart';
 
 import 'authentication.dart';
 
@@ -28,6 +34,7 @@ class _HomeListState extends State<HomeList> {
   late User _user;
   bool _isSigningOut = false;
   int _selectIndex = 0;
+  List? _recommendationList;
 
   Route _routeToSignInScreen() {
     return PageRouteBuilder(
@@ -62,6 +69,32 @@ class _HomeListState extends State<HomeList> {
 
   @override
   Widget build(BuildContext context) {
+    Future<void> getPrediction(String urlStr) async {
+      urlStr = "https://poc-backend-330115.as.r.appspot.com/recommendation?" +
+          urlStr;
+      var url = Uri.parse(urlStr);
+
+      showSimpleNotification(Text("Calculating Recommendation"),
+          background: Colors.blue, duration: Duration(seconds: 5));
+
+      http.Response response = await http.get(url);
+      showSimpleNotification(Text("Recommendation Ready"),
+          background: Colors.green, duration: Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        var jsonResponse = convert.jsonDecode(response.body);
+        var recommendations = jsonResponse['recommendations'];
+
+        this.setState(() {
+          _recommendationList = recommendations;
+          print(_recommendationList);
+        });
+      } else {
+        print('Request Failed: ${response.statusCode}');
+        showSimpleNotification(Text("Error Calculating Recommendation"),
+            background: Colors.red, duration: Duration(seconds: 5));
+      }
+    }
+
     final topAppBar = AppBar(
       elevation: 0.1,
       backgroundColor: Color.fromRGBO(58, 66, 86, 1.0),
@@ -108,7 +141,66 @@ class _HomeListState extends State<HomeList> {
       ),
     );
 
-    final recommendApp = Container(child: (Text('Recommendations')));
+    final recommendApp = Container(
+      color: Colors.blueAccent,
+      child: ListView.builder(
+          scrollDirection: Axis.vertical,
+          shrinkWrap: true,
+          padding: const EdgeInsets.only(top: 20.0),
+          itemCount:
+              _recommendationList == null ? 0 : _recommendationList!.length,
+          itemBuilder: (BuildContext context, int index) {
+            return new Card(
+                elevation: 8.0,
+                margin:
+                    new EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
+                child: Container(
+                    decoration:
+                        BoxDecoration(color: Color.fromRGBO(64, 75, 96, 0.9)),
+                    child: ListTile(
+                        contentPadding: EdgeInsets.symmetric(
+                            horizontal: 20.0, vertical: 10.0),
+                        leading: Container(
+                            padding: EdgeInsets.only(right: 12.0),
+                            decoration: new BoxDecoration(
+                                border: new Border(
+                                    right: new BorderSide(
+                                        width: 1.0, color: Colors.white24))),
+                            child: _getHomeIcon(
+                                _recommendationList![index]['property_type'])),
+                        title: Text(
+                          _recommendationList![index]['properties_name'],
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Row(
+                          children: <Widget>[
+                            Icon(Icons.linear_scale,
+                                color: Colors.yellowAccent),
+                            Text(_recommendationList![index]['property_type'],
+                                style: TextStyle(color: Colors.white))
+                          ],
+                        ),
+                        trailing: InkWell(
+                            child: Icon(Icons.keyboard_arrow_right,
+                                color: Colors.white, size: 30.0),
+                            onTap: () {
+                              final rec = Recommendations.fromJson(
+                                  _recommendationList![index]);
+                              _navigate2(BuildContext context) {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          RecommendationDetails(rec),
+                                    ));
+                              }
+
+                              _navigate2(context);
+                            }))));
+          }),
+    );
+
     final surveyApp = Scaffold(
         body: Center(
             child: Column(
@@ -143,7 +235,10 @@ class _HomeListState extends State<HomeList> {
                     MaterialPageRoute(
                         builder: (context) => LivingCoSurvey(
                               user: _user,
-                            )));
+                            ))).then((value) {
+                  print(value); // URL string
+                  getPrediction(value);
+                });
               },
             )),
       ],

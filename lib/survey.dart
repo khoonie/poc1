@@ -1,5 +1,4 @@
-import 'dart:convert';
-
+import 'dart:convert' as convert;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,11 +17,27 @@ class LivingCoSurvey extends StatefulWidget {
 
 class _LivingCoSurveyState extends State<LivingCoSurvey> {
   late User _user;
-
-  void _returnToHomelist() {
-    Navigator.of(context).pop();
+  String urlString = '';
+  void _returnToHomelist(String urlStr) {
+    //print(urlStr);
+    Navigator.of(context).pop(urlStr); // pass the URLString back to homelist
   }
 
+/*
+  Future<void> getPrediction(String urlStr) async {
+    urlStr =
+        "https://poc-backend-330115.as.r.appspot.com/recommendation?" + urlStr;
+    var url = Uri.parse(urlStr);
+    http.Response response = await http.get(url);
+    if (response.statusCode == 200) {
+      var jsonResponse = convert.jsonDecode(response.body);
+      var recommendations = jsonResponse['recommendations'];
+      print(recommendations);
+    } else {
+      print('Request Failed: ${response.statusCode}');
+    }
+  }
+*/
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -61,12 +76,18 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
                               if (questionResult.result ==
                                   BooleanResult.NEGATIVE) {
                                 print('False');
+                                urlString =
+                                    urlString + questionResult.id!.id + '=0&';
                               } else if (questionResult.result ==
                                   BooleanResult.POSITIVE) {
                                 print('True');
+                                urlString =
+                                    urlString + questionResult.id!.id + '=1&';
                               } else if (questionResult.result ==
                                   BooleanResult.NONE) {
                                 print('No Answer');
+                                urlString =
+                                    urlString + questionResult.id!.id + '=NaN&';
                               }
                             } else if (questionResult is TextQuestionResult) {
                               print('Text Aswer is');
@@ -82,6 +103,11 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
                             } else if (questionResult
                                 is SingleChoiceQuestionResult) {
                               print(questionResult.result!.value);
+                              urlString = urlString +
+                                  questionResult.id!.id +
+                                  '=' +
+                                  questionResult.result!.value +
+                                  '&';
                             } else if (questionResult
                                 is InstructionStepResult) {
                               print('Instruction Step - no result');
@@ -91,8 +117,10 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
                           }
                         }
                       }
-
-                      _returnToHomelist();
+                      urlString = urlString.substring(
+                          0, urlString.length - 1); // remove last '&'
+                      //getPrediction(urlString);
+                      _returnToHomelist(urlString);
                     },
                     task: task,
                     themeData: Theme.of(context).copyWith(
@@ -192,6 +220,7 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
         QuestionStep(
           title: 'Your Age Range',
           text: 'Select your age range',
+          stepIdentifier: StepIdentifier(id: 'age'),
           answerFormat: SingleChoiceAnswerFormat(
             textChoices: [
               TextChoice(text: '<26', value: '<26'),
@@ -208,6 +237,7 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
         QuestionStep(
           title: 'Marrital Status',
           text: 'Are You Married?',
+          stepIdentifier: StepIdentifier(id: 'married'),
           answerFormat: BooleanAnswerFormat(
             positiveAnswer: 'Yes',
             negativeAnswer: 'No/Other',
@@ -237,6 +267,7 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
         QuestionStep(
           title: 'Kids below 7',
           text: 'How many kids do you have below 7',
+          stepIdentifier: StepIdentifier(id: 'kids_below_7'),
           answerFormat: SingleChoiceAnswerFormat(
             textChoices: [
               TextChoice(text: '0', value: '0'),
@@ -254,6 +285,7 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
         QuestionStep(
           title: 'Kids between 7 and 12',
           text: 'How many kids do you have between 7 and 12',
+          stepIdentifier: StepIdentifier(id: 'kids_between_7_and_12'),
           answerFormat: SingleChoiceAnswerFormat(
             textChoices: [
               TextChoice(text: '0', value: '0'),
@@ -271,6 +303,7 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
         QuestionStep(
           title: 'Household Size',
           text: 'What is the size of your household?',
+          stepIdentifier: StepIdentifier(id: 'household_size'),
           answerFormat: SingleChoiceAnswerFormat(
             textChoices: [
               TextChoice(text: '1', value: '1'),
@@ -284,13 +317,14 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
         QuestionStep(
           title: 'Household Income',
           text: 'What is the range of your household income?',
+          stepIdentifier: StepIdentifier(id: 'household_income'),
           answerFormat: SingleChoiceAnswerFormat(
             textChoices: [
-              TextChoice(text: '3000~5000', value: '0'),
-              TextChoice(text: '5001~7000', value: '1'),
-              TextChoice(text: '7001~10000', value: '2'),
-              TextChoice(text: '10001~15000', value: '3'),
-              TextChoice(text: '15001~20000', value: '4'),
+              TextChoice(text: '3000~5000', value: '3000~5000'),
+              TextChoice(text: '5001~7000', value: '5001~7000'),
+              TextChoice(text: '7001~10000', value: '7001~10000'),
+              TextChoice(text: '10001~15000', value: '10001~15000'),
+              TextChoice(text: '15001~20000', value: '15001~20000'),
             ],
             defaultSelection: TextChoice(text: '0', value: '0'),
           ),
@@ -353,7 +387,7 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
 
   Future<Task> getJsonTask() async {
     final taskJson = await rootBundle.loadString('assets/example_json.json');
-    final taskMap = json.decode(taskJson);
+    final taskMap = convert.json.decode(taskJson);
 
     return Task.fromJson(taskMap);
   }

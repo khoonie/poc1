@@ -2,10 +2,12 @@ import 'package:easy_splash_screen/easy_splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:overlay_support/overlay_support.dart';
 import 'package:poc1/authentication.dart';
 import 'package:poc1/homelist.dart';
 import 'package:poc1/signup.dart';
 import 'dart:developer';
+import 'package:overlay_support/overlay_support.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,12 +37,13 @@ class MyApp extends StatelessWidget {
           }
         });
 */
-    return MaterialApp(
+    return OverlaySupport.global(
+        child: MaterialApp(
       title: 'LivingCo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primaryColor: Color.fromRGBO(58, 66, 86, 1.0)),
       home: IntroScreen(),
-    );
+    ));
   }
 }
 
