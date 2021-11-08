@@ -15,11 +15,11 @@ class Recommendations {
   String no_of_stations = '';
   String no_of_supermarkets = '';
   String plotRatio = '';
-  String original_price = '';
+  String price = '';
   String properties_name = '';
   String property_type = '';
   String rental = '';
-  String original_size = '';
+  String size = '';
   String subdistrict = '';
   String year_of_built = '';
 
@@ -40,11 +40,11 @@ class Recommendations {
       this.no_of_stations,
       this.no_of_supermarkets,
       this.plotRatio,
-      this.original_price,
+      this.price,
       this.properties_name,
       this.property_type,
       this.rental,
-      this.original_size,
+      this.size,
       this.subdistrict,
       this.year_of_built);
 
@@ -74,11 +74,11 @@ Map<String, dynamic> _RecommendationsToJson(Recommendations instance) =>
       'no_of_stations': instance.no_of_stations,
       'no_of_supermarkets': instance.no_of_supermarkets,
       'plotRatio': instance.plotRatio,
-      'price': instance.original_price,
+      'price': instance.price,
       'properties_name': instance.properties_name,
       'property_type': instance.property_type,
       'rental': instance.rental,
-      'size': instance.original_size,
+      'size': instance.size,
       'subdistrict': instance.subdistrict,
       'year_of_built': instance.year_of_built
     };
@@ -87,25 +87,25 @@ Recommendations _RecommendationsFromJson(Map<String, dynamic> json) {
   return Recommendations(
       (json['user_id'] ?? "") as String,
       (json['address'] ?? "") as String,
-      (json['property_id'] ?? "") as String,
+      (json['property_id'] ?? "").toString() as String,
       (json['latitude'] ?? "").toString() as String,
       (json['leasing'] ?? "") as String,
       (json['longitude'] ?? "").toString() as String,
-      (json['no_of_bathrooms'] ?? "") as String,
-      (json['no_of_bedrooms'] ?? "") as String,
-      (json['no_of_hawkers'] ?? "") as String,
-      (json['no_of_malls'] ?? "") as String,
-      (json['no_of_parks'] ?? "") as String,
-      (json['no_of_preschools'] ?? "") as String,
-      (json['no_of_schools'] ?? "") as String,
-      (json['no_of_stations'] ?? "") as String,
-      (json['no_of_supermarkets'] ?? "") as String,
+      (json['no_of_bathrooms'] ?? "").toString() as String,
+      (json['no_of_bedrooms'] ?? "").toString() as String,
+      (json['no_of_hawkers'] ?? "").toString() as String,
+      (json['no_of_malls'] ?? "").toString() as String,
+      (json['no_of_parks'] ?? "").toString() as String,
+      (json['no_of_preschools'] ?? "").toString() as String,
+      (json['no_of_schools'] ?? "").toString() as String,
+      (json['no_of_stations'] ?? "").toString() as String,
+      (json['no_of_supermarkets'] ?? "").toString() as String,
       (json['plot ratio'] ?? "").toString() as String,
-      (json['original_price'] ?? "").toString() as String,
+      (json['price'] ?? "").toString() as String,
       (json['properties_name'] ?? "") as String,
       (json['property_type'] ?? "") as String,
       (json['rental'] ?? "").toString() as String,
-      (json['original_size'] ?? "").toString() as String,
+      (json['size'] ?? "").toString() as String,
       (json['subdistrict'] ?? "") as String,
-      (json['year_of_built'] ?? "") as String);
+      (json['year_of_built'] ?? "").toString() as String);
 }

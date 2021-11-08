@@ -62,7 +62,7 @@ class _RecommendationDetailFormState extends State<RecommendationDetailForm> {
         position: mainLocation,
         infoWindow: InfoWindow(
           title: widget.recommendations.properties_name,
-          snippet: widget.recommendations.original_price,
+          snippet: widget.recommendations.price,
         ),
         icon: BitmapDescriptor.defaultMarker,
       ));
@@ -162,7 +162,7 @@ class _RecommendationDetailFormState extends State<RecommendationDetailForm> {
               children: [
                 Container(
                     child: Text(
-                  widget.recommendations.original_price,
+                  widget.recommendations.price,
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25),
                 )),
                 Container(
@@ -285,7 +285,7 @@ class _RecommendationDetailFormState extends State<RecommendationDetailForm> {
                     padding:
                         EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                     child: Text(
-                      widget.recommendations.original_size,
+                      widget.recommendations.size,
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     )),

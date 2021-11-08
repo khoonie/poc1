@@ -42,9 +42,17 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+          fontFamily: 'Georgia',
+          textTheme: const TextTheme(
+            headline5: TextStyle(
+                fontSize: 20.0,
+                fontWeight: FontWeight.normal,
+                textBaseline: TextBaseline.alphabetic),
+          )),
       home: Scaffold(
         body: Container(
-          color: Colors.white,
+          color: Colors.blue,
           child: Align(
             alignment: Alignment.center,
             child: FutureBuilder<Task>(
@@ -61,6 +69,8 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
                       if (result.finishReason == FinishReason.DISCARDED) {
                         print('cancel pressed');
                         //Navigator.pop(context);
+                        String urlStr = '';
+                        _returnToHomelist(urlStr);
                       } else if (result.finishReason ==
                           FinishReason.COMPLETED) {
                         print(result.endDate);
@@ -131,6 +141,7 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
                       ),
                       primaryColor: Colors.cyan,
                       backgroundColor: Colors.white,
+                      //typography: ,
                       appBarTheme: const AppBarTheme(
                         color: Colors.white,
                         iconTheme: IconThemeData(
@@ -174,7 +185,7 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
                                     .textTheme
                                     .button
                                     ?.copyWith(
-                                      color: Colors.grey,
+                                      color: Colors.cyan,
                                     );
                               }
                               return Theme.of(context)
@@ -199,6 +210,7 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
                     ),
                   );
                 }
+                //_returnToHomelist('');
                 return CircularProgressIndicator.adaptive();
               },
             ),

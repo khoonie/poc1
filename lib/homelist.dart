@@ -70,28 +70,32 @@ class _HomeListState extends State<HomeList> {
   @override
   Widget build(BuildContext context) {
     Future<void> getPrediction(String urlStr) async {
-      urlStr = "https://poc-backend-330115.as.r.appspot.com/recommendation?" +
-          urlStr;
-      var url = Uri.parse(urlStr);
+      if (urlStr != '') {
+        // survey cancelled
+        urlStr = "https://poc-backend-330115.as.r.appspot.com/recommendation?" +
+            urlStr;
+        var url = Uri.parse(urlStr);
 
-      showSimpleNotification(Text("Calculating Recommendation"),
-          background: Colors.blue, duration: Duration(seconds: 5));
+        showSimpleNotification(Text("Calculating Recommendation"),
+            background: Colors.blue, duration: Duration(seconds: 5));
 
-      http.Response response = await http.get(url);
-      showSimpleNotification(Text("Recommendation Ready"),
-          background: Colors.green, duration: Duration(seconds: 5));
-      if (response.statusCode == 200) {
-        var jsonResponse = convert.jsonDecode(response.body);
-        var recommendations = jsonResponse['recommendations'];
+        http.Response response = await http.get(url);
+        showSimpleNotification(Text("Recommendation Ready"),
+            background: Colors.green, duration: Duration(seconds: 5));
+        if (response.statusCode == 200) {
+          var tempResponse = response.body.replaceAll('NaN', '""');
+          var jsonResponse = convert.jsonDecode(tempResponse);
+          var recommendations = jsonResponse['recommendations'];
 
-        this.setState(() {
-          _recommendationList = recommendations;
-          print(_recommendationList);
-        });
-      } else {
-        print('Request Failed: ${response.statusCode}');
-        showSimpleNotification(Text("Error Calculating Recommendation"),
-            background: Colors.red, duration: Duration(seconds: 5));
+          this.setState(() {
+            _recommendationList = recommendations;
+            print(_recommendationList);
+          });
+        } else {
+          print('Request Failed: ${response.statusCode}');
+          showSimpleNotification(Text("Error Calculating Recommendation"),
+              background: Colors.red, duration: Duration(seconds: 5));
+        }
       }
     }
 
