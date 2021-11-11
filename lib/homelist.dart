@@ -17,6 +17,116 @@ import 'package:overlay_support/overlay_support.dart';
 
 import 'authentication.dart';
 
+class CustomListItem extends StatelessWidget {
+  const CustomListItem({
+    Key? key,
+    required this.thumbnail,
+    required this.title,
+    required this.subtitle1,
+    required this.subtitle2,
+    required this.subtitle3,
+    required this.jsonobj,
+  }) : super(key: key);
+
+  final Widget thumbnail;
+  final String title;
+  final String subtitle1;
+  final String subtitle2;
+  final String subtitle3;
+  final dynamic jsonobj;
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+        elevation: 8.0,
+        // margin from edge of the screen, and from each card vertically
+        margin: EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
+        child: Container(
+          decoration: BoxDecoration(color: Color.fromRGBO(64, 75, 96, 0.9)),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(
+                flex: 1,
+                child: thumbnail,
+              ),
+              Expanded(
+                flex: 4,
+                child: _PropDescription(
+                    title: title,
+                    subtitle1: subtitle1,
+                    subtitle2: subtitle2,
+                    subtitle3: subtitle3),
+              ),
+              InkWell(
+                  child: Icon(Icons.keyboard_arrow_right,
+                      color: Colors.white, size: 50.0),
+                  onTap: () {
+                    final rec = Recommendations.fromJson(jsonobj);
+                    _navigate3(BuildContext context) {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => RecommendationDetails(rec),
+                          ));
+                    }
+
+                    _navigate3(context);
+                  }),
+            ],
+          ),
+        ));
+  }
+}
+
+class _PropDescription extends StatelessWidget {
+  const _PropDescription({
+    Key? key,
+    required this.title,
+    required this.subtitle1,
+    required this.subtitle2,
+    required this.subtitle3,
+  }) : super(key: key);
+
+  final String title;
+  final String subtitle1;
+  final String subtitle2;
+  final String subtitle3;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+        // distance of wordings from edge of card
+        padding: const EdgeInsets.fromLTRB(10.0, 10.0, 0.0, 10.0),
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                title,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.0),
+              ),
+              const Padding(padding: EdgeInsets.symmetric(vertical: 2.0)),
+              Text(
+                subtitle1,
+                style: const TextStyle(color: Colors.white60, fontSize: 13.0),
+              ),
+              const Padding(padding: EdgeInsets.symmetric(vertical: 1.0)),
+              Text(
+                subtitle2,
+                style: const TextStyle(color: Colors.white60, fontSize: 13.0),
+              ),
+              const Padding(padding: EdgeInsets.symmetric(vertical: 1.0)),
+              Text(
+                subtitle3,
+                style:
+                    const TextStyle(color: Colors.greenAccent, fontSize: 13.0),
+              ),
+            ]));
+  }
+}
+
 class HomeList extends StatefulWidget {
   const HomeList({Key? key, required User user})
       : _user = user,
@@ -101,8 +211,11 @@ class _HomeListState extends State<HomeList> {
 
     final topAppBar = AppBar(
       elevation: 0.1,
-      backgroundColor: Color.fromRGBO(58, 66, 86, 1.0),
-      title: Text('Living Poc1'),
+      backgroundColor: Color.fromRGBO(58, 66, 86, 0.0),
+      title: Image.asset(
+        'assets/icon/Seeker Logo.png',
+        height: 64,
+      ),
       actions: <Widget>[
         IconButton(
           icon: Icon(Icons.list),
@@ -154,7 +267,28 @@ class _HomeListState extends State<HomeList> {
           itemCount:
               _recommendationList == null ? 0 : _recommendationList!.length,
           itemBuilder: (BuildContext context, int index) {
-            return new Card(
+            return CustomListItem(
+              thumbnail:
+                  _getHomeIcon(_recommendationList![index]['property_type']),
+              title: _recommendationList![index]['properties_name'] +
+                  (_recommendationList![index]['subdistrict'] == 'nan'
+                      ? ''
+                      : ' (' +
+                          _recommendationList![index]['subdistrict'] +
+                          ')'),
+              subtitle1: _recommendationList![index]['no_of_bedrooms']
+                      .toString() +
+                  ' Bedrooms   ' +
+                  _recommendationList![index]['no_of_bathrooms'].toString() +
+                  ' Bathrooms',
+              subtitle2:
+                  _recommendationList![index]['size'].toString() + ' SqFeet',
+              subtitle3:
+                  'S\$ ' + _recommendationList![index]['price'].toString(),
+              jsonobj: _recommendationList![index],
+            );
+
+            /*return new Card(
                 elevation: 8.0,
                 margin:
                     new EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
@@ -162,46 +296,65 @@ class _HomeListState extends State<HomeList> {
                     decoration:
                         BoxDecoration(color: Color.fromRGBO(64, 75, 96, 0.9)),
                     child: ListTile(
-                        contentPadding: EdgeInsets.symmetric(
-                            horizontal: 20.0, vertical: 10.0),
-                        leading: Container(
-                            padding: EdgeInsets.only(right: 12.0),
-                            decoration: new BoxDecoration(
-                                border: new Border(
-                                    right: new BorderSide(
-                                        width: 1.0, color: Colors.white24))),
-                            child: _getHomeIcon(
-                                _recommendationList![index]['property_type'])),
-                        title: Text(
-                          _recommendationList![index]['properties_name'],
-                          style: TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Row(
-                          children: <Widget>[
-                            Icon(Icons.linear_scale,
-                                color: Colors.yellowAccent),
-                            Text(_recommendationList![index]['property_type'],
-                                style: TextStyle(color: Colors.white))
-                          ],
-                        ),
-                        trailing: InkWell(
-                            child: Icon(Icons.keyboard_arrow_right,
-                                color: Colors.white, size: 30.0),
-                            onTap: () {
-                              final rec = Recommendations.fromJson(
-                                  _recommendationList![index]);
-                              _navigate2(BuildContext context) {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          RecommendationDetails(rec),
-                                    ));
-                              }
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: 20.0, vertical: 10.0),
+                      leading: Container(
+                        padding: EdgeInsets.only(right: 12.0),
+                        decoration: new BoxDecoration(
+                            border: new Border(
+                                right: new BorderSide(
+                                    width: 1.0, color: Colors.white24))),
+                        child: _getHomeIcon(
+                            _recommendationList![index]['property_type']),
+                      ),
+                      title: Text(
+                        _recommendationList![index]['properties_name'],
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Row(
+                        children: <Widget>[
+                          //Icon(Icons.house, color: Colors.yellowAccent),
+                          Text(
+                              _recommendationList![index]['property_type'] +
+                                  '\n',
+                              style: TextStyle(color: Colors.white)),
+                          Text(
+                              _recommendationList![index]['no_of_bedrooms']
+                                      .toString() +
+                                  ' Bedrooms',
+                              style: TextStyle(color: Colors.white)),
+                          Text(
+                              'SGD ' +
+                                  _recommendationList![index]['price']
+                                      .toString(),
+                              style: TextStyle(color: Colors.white)),
+                          Text(
+                              'SQF ' +
+                                  _recommendationList![index]['size']
+                                      .toString(),
+                              style: TextStyle(color: Colors.white)),
+                        ],
+                      ),
+                      trailing: InkWell(
+                          child: Icon(Icons.keyboard_arrow_right,
+                              color: Colors.white, size: 30.0),
+                          onTap: () {
+                            final rec = Recommendations.fromJson(
+                                _recommendationList![index]);
+                            _navigate2(BuildContext context) {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        RecommendationDetails(rec),
+                                  ));
+                            }
 
-                              _navigate2(context);
-                            }))));
+                            _navigate2(context);
+                          }),
+                      isThreeLine: true,
+                    )));*/
           }),
     );
 
@@ -558,17 +711,29 @@ class _HomeListState extends State<HomeList> {
     Widget homeIcon;
     if (type == "Condominium") {
       homeIcon = IconButton(
-        icon: Icon(Icons.home, color: Colors.white),
+        icon: Icon(
+          Icons.home,
+          color: Colors.white,
+          size: 50.0,
+        ),
         onPressed: () {},
       );
     } else if (type == "Apartment") {
       homeIcon = IconButton(
-        icon: Icon(Icons.apartment, color: Colors.white),
+        icon: Icon(
+          Icons.apartment,
+          color: Colors.white,
+          size: 40.0,
+        ),
         onPressed: () {},
       );
     } else {
       homeIcon = IconButton(
-        icon: Icon(Icons.house, color: Colors.white),
+        icon: Icon(
+          Icons.house,
+          color: Colors.white,
+          size: 40.0,
+        ),
         onPressed: () {},
       );
     }

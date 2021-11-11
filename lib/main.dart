@@ -52,7 +52,11 @@ class IntroScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     //User? result = FirebaseAuth.instance.currentUser;
     return EasySplashScreen(
-      logo: Image.network('https://i.imgur.com/pnh0cpW.png'),
+      logo: Image.network(
+        'https://i.imgur.com/pnh0cpW.png',
+        height: 200,
+      ),
+
       title: Text(
         "LivingCo",
         style: TextStyle(
