@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 import 'package:flutter_signin_button/button_builder.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
@@ -146,6 +147,9 @@ class _HomeListState extends State<HomeList> {
   int _selectIndex = 0;
   List? _recommendationList;
   String? _savedUrlStr;
+  int _pageNumber = 0;
+  late ScrollController _scrollController;
+  bool isLoading = false;
 
   Route _routeToSignInScreen() {
     return PageRouteBuilder(
@@ -173,10 +177,55 @@ class _HomeListState extends State<HomeList> {
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   void initState() {
     _user = widget._user;
     _savedUrlStr = '';
+
+    _scrollController = new ScrollController(initialScrollOffset: 5.0)
+      ..addListener(_scrollListener);
     super.initState();
+  }
+
+  Future<void> _fetchPage() async {
+    int nextPageNumber = _pageNumber + 1;
+    String urlStr =
+        "https://poc-backend-330115.as.r.appspot.com/recommendation?" +
+            _savedUrlStr! +
+            "&page=" +
+            nextPageNumber.toString() +
+            "&userid=" +
+            _user.uid;
+
+    var url = Uri.parse(urlStr);
+    EasyLoading.show(status: 'Fetching...');
+
+    http.Response response = await http.get(url);
+    EasyLoading.dismiss();
+
+    if (response.statusCode == 200) {
+      var tempResponse = response.body.replaceAll('NaN', '""');
+      var jsonResponse = convert.jsonDecode(tempResponse);
+      var recommendations = jsonResponse['recommendations'];
+
+      this.setState(() {
+        _recommendationList!.addAll(recommendations);
+        _pageNumber = nextPageNumber;
+        isLoading = false;
+      });
+    } else {
+      print('Request Failed: ${response.statusCode}');
+      EasyLoading.showError("Request Failed");
+
+      this.setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   @override
@@ -186,16 +235,22 @@ class _HomeListState extends State<HomeList> {
         _recommendationList!.clear();
       });
       String urlStr =
-          "https://poc-backend-330115.as.r.appspot.com/recommendation?" +
-              _savedUrlStr!;
+          "https://poc-backend-330115.as.r.appspot.com/recommendation?page=0&" +
+              _savedUrlStr! +
+              "&userid=" +
+              _user.uid;
+      ;
       var url = Uri.parse(urlStr);
-      showSimpleNotification(Text("Refreshing Recommendations"),
-          background: Colors.blue, duration: Duration(seconds: 5));
+      //showSimpleNotification(Text("Refreshing Recommendations"),
+      //  background: Colors.blue, duration: Duration(seconds: 5));
+      EasyLoading.show(status: 'Re-calculating...');
       http.Response response = await http.get(url);
+      EasyLoading.dismiss();
+      EasyLoading.showSuccess("Recommendations Ready");
 
       if (response.statusCode == 200) {
-        showSimpleNotification(Text("Recommendation Ready"),
-            background: Colors.green, duration: Duration(seconds: 5));
+        //showSimpleNotification(Text("Recommendation Ready"),
+        //  background: Colors.green, duration: Duration(seconds: 5));
         var tempResponse = response.body.replaceAll('NaN', '""');
         var jsonResponse = convert.jsonDecode(tempResponse);
         var recommendations = jsonResponse['recommendations'];
@@ -206,26 +261,25 @@ class _HomeListState extends State<HomeList> {
         });
       } else {
         print('Request Failed: ${response.statusCode}');
-        showSimpleNotification(Text("Error Calculating Recommendation"),
-            background: Colors.red, duration: Duration(seconds: 5));
+        EasyLoading.showError("Request Failed");
       }
     }
 
     Future<void> getPrediction(String urlStr) async {
       if (urlStr != '') {
         // survey not cancelled
-        urlStr = "https://poc-backend-330115.as.r.appspot.com/recommendation?" +
-            urlStr;
+        urlStr =
+            "https://poc-backend-330115.as.r.appspot.com/recommendation?page=0&" +
+                urlStr +
+                "&userid=" +
+                _user.uid;
         var url = Uri.parse(urlStr);
-
-        showSimpleNotification(Text("Calculating Recommendation"),
-            background: Colors.blue, duration: Duration(seconds: 5));
-
+        print("Userid = " + _user.uid);
+        EasyLoading.show(status: 'Calculating, Please Wait...');
         http.Response response = await http.get(url);
-
+        EasyLoading.dismiss();
+        EasyLoading.showSuccess("Recommendations Ready");
         if (response.statusCode == 200) {
-          showSimpleNotification(Text("Recommendation Ready"),
-              background: Colors.green, duration: Duration(seconds: 5));
           var tempResponse = response.body.replaceAll('NaN', '""');
           var jsonResponse = convert.jsonDecode(tempResponse);
           var recommendations = jsonResponse['recommendations'];
@@ -236,8 +290,9 @@ class _HomeListState extends State<HomeList> {
           });
         } else {
           print('Request Failed: ${response.statusCode}');
-          showSimpleNotification(Text("Error Calculating Recommendation"),
-              background: Colors.red, duration: Duration(seconds: 5));
+          EasyLoading.showError("Request Failed");
+          //showSimpleNotification(Text("Error Calculating Recommendation"),
+          //  background: Colors.red, duration: Duration(seconds: 5));
         }
       }
     }
@@ -296,6 +351,7 @@ class _HomeListState extends State<HomeList> {
         child: RefreshIndicator(
           child: ListView.builder(
               scrollDirection: Axis.vertical,
+              controller: _scrollController,
               shrinkWrap: true,
               padding: const EdgeInsets.only(top: 20.0),
               itemCount:
@@ -583,6 +639,18 @@ class _HomeListState extends State<HomeList> {
         onTap: _onItemTapped,
       ),
     );
+  }
+
+  _scrollListener() {
+    if (_scrollController.offset >=
+            _scrollController.position.maxScrollExtent &&
+        !_scrollController.position.outOfRange) {
+      setState(() {
+        isLoading = true;
+      });
+      print("Comes to bottom $isLoading");
+      _fetchPage();
+    }
   }
 
   Widget _buildList(BuildContext context,
