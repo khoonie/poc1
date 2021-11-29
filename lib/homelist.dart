@@ -15,6 +15,7 @@ import 'package:poc1/survey.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert' as convert;
 import 'package:overlay_support/overlay_support.dart';
+import 'package:chat_list/chat_list.dart';
 
 import 'authentication.dart';
 
@@ -478,7 +479,40 @@ class _HomeListState extends State<HomeList> {
 
     final scheduleApp = Container(child: (Text('Scheduler')));
     final agentIntroApp = Container(child: (Text('Agent Intro and Promo')));
-    final agentChatApp = Container(child: (Text('Agent Chat')));
+
+    final ScrollController _chatScrollController = ScrollController();
+    final List<Message> _messageList = [
+      Message(
+          content: "Hey can I view this house?",
+          ownerType: OwnerType.sender,
+          ownerName: "HomeBuyer1"),
+      Message(
+          content: "Sure, let's set up an appointment",
+          textColor: Colors.black38,
+          fontSize: 18.0,
+          ownerType: OwnerType.receiver,
+          ownerName: "Agent1"),
+      Message(
+          content:
+              "Can we meet at 3pm, at the corner of X and Y street? My contact is 111-222-333",
+          ownerType: OwnerType.sender,
+          ownerName: "HomeBuyer1"),
+      Message(
+          content: "No problem I have you down for 3pm. See you then!",
+          textColor: Colors.black38,
+          fontSize: 18.0,
+          ownerType: OwnerType.receiver,
+          ownerName: "Agent1"),
+      Message(
+          content: "Great, have a nice day.",
+          ownerType: OwnerType.sender,
+          ownerName: "HomeBuyer1"),
+    ];
+
+    final agentChatApp = Container(
+        child: ChatList(
+            children: _messageList, scrollController: _chatScrollController));
+
     final agentsAppSelections = DefaultTabController(
       length: 3,
       child: Scaffold(
