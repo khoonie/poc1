@@ -14,7 +14,8 @@ import 'package:poc1/signup.dart';
 import 'package:poc1/survey.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert' as convert;
-import 'package:overlay_support/overlay_support.dart';
+import 'package:flutter_clean_calendar/flutter_clean_calendar.dart';
+import 'package:flutter_clean_calendar/clean_calendar_event.dart';
 import 'package:chat_list/chat_list.dart';
 
 import 'authentication.dart';
@@ -148,6 +149,7 @@ class _HomeListState extends State<HomeList> {
   int _selectIndex = 0;
   List? _recommendationList;
   String? _savedUrlStr;
+  bool _invest = false;
   int _pageNumber = 0;
   late ScrollController _scrollController;
   bool isLoading = false;
@@ -187,6 +189,7 @@ class _HomeListState extends State<HomeList> {
   void initState() {
     _user = widget._user;
     _savedUrlStr = '';
+    _invest = false;
 
     _scrollController = new ScrollController(initialScrollOffset: 5.0)
       ..addListener(_scrollListener);
@@ -266,7 +269,9 @@ class _HomeListState extends State<HomeList> {
       }
     }
 
-    Future<void> getPrediction(String urlStr) async {
+    Future<void> getPrediction(String urlStr, bool invest) async {
+      print("is this an investment property?");
+      print(invest);
       if (urlStr != '') {
         // survey not cancelled
         urlStr =
@@ -420,9 +425,10 @@ class _HomeListState extends State<HomeList> {
                             ))).then((value) {
                   print(value); // URL string
                   setState(() {
-                    _savedUrlStr = value;
+                    _savedUrlStr = value["url"];
+                    _invest = value["invest"];
                   });
-                  getPrediction(value);
+                  getPrediction(value["url"], value["invest"]);
                 });
               },
             )),
@@ -477,7 +483,92 @@ class _HomeListState extends State<HomeList> {
       ),
     );
 
-    final scheduleApp = Container(child: (Text('Scheduler')));
+    final Map<DateTime, List<CleanCalendarEvent>> _events = {
+      DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day): [
+        CleanCalendarEvent('House Viewing Appointment',
+            startTime: DateTime(DateTime.now().year, DateTime.now().month,
+                DateTime.now().day, 10, 0),
+            endTime: DateTime(DateTime.now().year, DateTime.now().month,
+                DateTime.now().day, 12, 0),
+            description: 'Meet with Miss Chamberlane at Orchard Rd',
+            color: Colors.blue.shade700),
+      ],
+      DateTime(
+          DateTime.now().year, DateTime.now().month, DateTime.now().day + 2): [
+        CleanCalendarEvent('New Condo Launch Reception',
+            startTime: DateTime(DateTime.now().year, DateTime.now().month,
+                DateTime.now().day + 2, 10, 0),
+            endTime: DateTime(DateTime.now().year, DateTime.now().month,
+                DateTime.now().day + 2, 12, 0),
+            description: 'Launch event at New World Center',
+            color: Colors.orange),
+        CleanCalendarEvent('House Viewing Appointment',
+            startTime: DateTime(DateTime.now().year, DateTime.now().month,
+                DateTime.now().day + 2, 14, 30),
+            endTime: DateTime(DateTime.now().year, DateTime.now().month,
+                DateTime.now().day + 2, 17, 0),
+            description: 'Meet with Mr Chiu at Beduk',
+            color: Colors.pink),
+      ],
+    };
+/*
+    Widget _buildEventList() {
+      return Expanded(
+        child: ListView.builder(
+          padding: EdgeInsets.all(0.0),
+          itemBuilder: (BuildContext context, int index) {
+            final CleanCalendarEvent event = _selectedEvents[index];
+            final String start =
+                DateFormat('HH:mm').format(event.startTime).toString();
+            final String end =
+                DateFormat('HH:mm').format(event.endTime).toString();
+            return ListTile(
+              contentPadding:
+                  EdgeInsets.only(left: 2.0, right: 8.0, top: 2.0, bottom: 2.0),
+              leading: Container(
+                width: 10.0,
+                color: event.color,
+              ),
+              title: Text(event.summary),
+              subtitle:
+                  event.description.isNotEmpty ? Text(event.description) : null,
+              trailing: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [Text(start), Text(end)],
+              ),
+              onTap: () {},
+            );
+          },
+          itemCount: _selectedEvents.length,
+        ),
+      );
+    }
+*/
+    void _handleNewDate(date) {
+      print('Date selected: $date');
+    }
+
+    final scheduleApp = Container(
+      child: Calendar(
+        startOnMonday: true,
+        weekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        events: _events,
+        onRangeSelected: (range) =>
+            print('Range is ${range.from}, ${range.to}'),
+        onDateSelected: (date) => _handleNewDate(date),
+        isExpandable: true,
+        selectedColor: Colors.pink,
+        todayColor: Colors.blue,
+        eventColor: Colors.grey,
+        locale: 'en_US',
+        todayButtonText: 'Today',
+        expandableDateFormat: 'EEEE, dd. MMMM yyyy',
+        dayOfWeekStyle: TextStyle(
+            color: Colors.black, fontWeight: FontWeight.w800, fontSize: 11),
+      ),
+    );
+    //_buildEventList()
+
     final agentIntroApp = Container(child: (Text('Agent Intro and Promo')));
 
     final ScrollController _chatScrollController = ScrollController();

@@ -18,26 +18,14 @@ class LivingCoSurvey extends StatefulWidget {
 class _LivingCoSurveyState extends State<LivingCoSurvey> {
   late User _user;
   String urlString = '';
-  void _returnToHomelist(String urlStr) {
-    //print(urlStr);
-    Navigator.of(context).pop(urlStr); // pass the URLString back to homelist
+  bool _invest = false;
+  void _returnToHomelist(String urlStr, bool invest) {
+    //pass two values back using class or a MAP
+    //
+    final data = {"url": urlStr, "invest": invest};
+    Navigator.of(context).pop(data); // pass the URLString back to homelist
   }
 
-/*
-  Future<void> getPrediction(String urlStr) async {
-    urlStr =
-        "https://poc-backend-330115.as.r.appspot.com/recommendation?" + urlStr;
-    var url = Uri.parse(urlStr);
-    http.Response response = await http.get(url);
-    if (response.statusCode == 200) {
-      var jsonResponse = convert.jsonDecode(response.body);
-      var recommendations = jsonResponse['recommendations'];
-      print(recommendations);
-    } else {
-      print('Request Failed: ${response.statusCode}');
-    }
-  }
-*/
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -70,7 +58,7 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
                         print('cancel pressed');
                         //Navigator.pop(context);
                         String urlStr = '';
-                        _returnToHomelist(urlStr);
+                        _returnToHomelist(urlStr, _invest);
                       } else if (result.finishReason ==
                           FinishReason.COMPLETED) {
                         print(result.endDate);
@@ -93,6 +81,11 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
                                 print('True');
                                 urlString =
                                     urlString + questionResult.id!.id + '=1&';
+                                if (questionResult.id!.id == 'investment') {
+                                  _invest = true;
+                                } else {
+                                  _invest = false;
+                                }
                               } else if (questionResult.result ==
                                   BooleanResult.NONE) {
                                 print('No Answer');
@@ -130,7 +123,7 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
                       urlString = urlString.substring(
                           0, urlString.length - 1); // remove last '&'
                       //getPrediction(urlString);
-                      _returnToHomelist(urlString);
+                      _returnToHomelist(urlString, _invest);
                     },
                     task: task,
                     themeData: Theme.of(context).copyWith(
@@ -228,6 +221,16 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
           title: 'Welcome to the\nLivingCo Properties App\nUser Survey',
           text: 'These questions will help us suggest some properties to you',
           buttonText: 'Let\'s go!',
+        ),
+        QuestionStep(
+          title: 'Purpose of Property',
+          text: 'Are you looking to purchase the property for',
+          stepIdentifier: StepIdentifier(id: 'investment'),
+          answerFormat: BooleanAnswerFormat(
+            positiveAnswer: 'Investment Purposes',
+            negativeAnswer: 'Self Stay',
+            result: BooleanResult.NEGATIVE,
+          ),
         ),
         QuestionStep(
           title: 'Your Age Range',
@@ -338,7 +341,7 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
               TextChoice(text: '10001~15000', value: '10001~15000'),
               TextChoice(text: '15001~20000', value: '15001~20000'),
             ],
-            defaultSelection: TextChoice(text: '0', value: '0'),
+            defaultSelection: TextChoice(text: '3000~5000', value: '3000~5000'),
           ),
         ),
         /*QuestionStep(
