@@ -228,7 +228,7 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
           stepIdentifier: StepIdentifier(id: 'investment'),
           answerFormat: BooleanAnswerFormat(
             positiveAnswer: 'Investment Purposes',
-            negativeAnswer: 'Self Stay',
+            negativeAnswer: 'Own Stay',
             result: BooleanResult.NEGATIVE,
           ),
         ),
