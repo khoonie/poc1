@@ -1,48 +1,48 @@
-import 'dart:io';
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
-
 import 'package:intl/intl.dart';
 import 'package:poc1/repository/dataRepository.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'model/homes.dart';
+import 'model/recommendations.dart';
 
 typedef DialogCallback = void Function();
 
-class HomeDetails extends StatelessWidget {
-  final Home home;
-  const HomeDetails(this.home);
+class RecommendationDetails extends StatelessWidget {
+  final Recommendations recommendations;
+  const RecommendationDetails(this.recommendations);
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: Text(home.propname == null ? "" : home.propname),
+          title: Text(recommendations.properties_name == null
+              ? ""
+              : recommendations.properties_name),
           leading: IconButton(
               icon: Icon(Icons.arrow_back),
               onPressed: () {
                 Navigator.pop(context);
               }),
         ),
-        body: HomeDetailForm(home),
+        body: RecommendationDetailForm(recommendations),
       ),
     );
   }
 }
 
-class HomeDetailForm extends StatefulWidget {
-  final Home home;
-  const HomeDetailForm(this.home);
+class RecommendationDetailForm extends StatefulWidget {
+  final Recommendations recommendations;
+  const RecommendationDetailForm(this.recommendations);
 
   @override
-  _HomeDetailFormState createState() => _HomeDetailFormState();
+  _RecommendationDetailFormState createState() =>
+      _RecommendationDetailFormState();
 }
 
-class _HomeDetailFormState extends State<HomeDetailForm> {
+class _RecommendationDetailFormState extends State<RecommendationDetailForm> {
   final DataRepository repository = DataRepository();
-  //final _formKey = GlobalKey<FormBuilderState>();
+
   final dateformat = DateFormat('yyyy-MM-dd');
   final Set<Marker> _markers = new Set();
   GoogleMapController? myMapController;
@@ -61,8 +61,8 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
         markerId: MarkerId(mainLocation.toString()),
         position: mainLocation,
         infoWindow: InfoWindow(
-          title: widget.home.propname,
-          snippet: widget.home.price,
+          title: widget.recommendations.properties_name,
+          snippet: widget.recommendations.price,
         ),
         icon: BitmapDescriptor.defaultMarker,
       ));
@@ -72,14 +72,14 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
 
   @override
   void initState() {
-    proptype = widget.home.proptype;
-    if (["", null, false, 0].contains(widget.home.longitude)) {
+    proptype = widget.recommendations.property_type;
+    if (["", null, false, 0].contains(widget.recommendations.longitude)) {
       // default LatLng if one value is empty or null
       longitude = 103.851959;
       latitude = 1.290270;
     } else {
-      longitude = double.tryParse(widget.home.longitude)!;
-      latitude = double.tryParse(widget.home.latitude)!;
+      longitude = double.tryParse(widget.recommendations.longitude)!;
+      latitude = double.tryParse(widget.recommendations.latitude)!;
     }
     mainLocation = LatLng(latitude, longitude);
     super.initState();
@@ -128,7 +128,7 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
                   borderRadius: BorderRadius.all(Radius.circular(10.0))),
               color: Color.fromRGBO(0, 100, 100, 200)),
           child: Text(
-            widget.home.address,
+            widget.recommendations.address,
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25),
           ),
         ),
@@ -162,12 +162,12 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
               children: [
                 Container(
                     child: Text(
-                  widget.home.price,
+                  widget.recommendations.price,
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25),
                 )),
                 Container(
                     child: Text(
-                  widget.home.proptype,
+                  widget.recommendations.property_type,
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 )),
               ],
@@ -269,15 +269,6 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
                           fontWeight: FontWeight.bold,
                           fontStyle: FontStyle.italic)),
                 ),
-                Container(
-                  padding:
-                      EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                  //color: Colors.red,
-                  child: Text('Year Built',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontStyle: FontStyle.italic)),
-                ),
               ],
             )),
         Container(
@@ -294,7 +285,7 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
                     padding:
                         EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                     child: Text(
-                      widget.home.size,
+                      widget.recommendations.size,
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     )),
@@ -302,18 +293,10 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
                     padding:
                         EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                     child: Text(
-                      widget.home.leasing,
+                      widget.recommendations.leasing.toString(),
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                     )),
-                Container(
-                    padding:
-                        EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                    child: Text(
-                      widget.home.yearbuilt,
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                    ))
               ],
             )),
         Container(
@@ -365,7 +348,7 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
                     padding:
                         EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                     child: Text(
-                      widget.home.yearbuilt,
+                      widget.recommendations.year_of_built,
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     )),
@@ -373,7 +356,7 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
                     padding:
                         EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                     child: Text(
-                      widget.home.bedrs,
+                      widget.recommendations.no_of_bedrooms,
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     )),
@@ -381,7 +364,7 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
                     padding:
                         EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                     child: Text(
-                      widget.home.baths,
+                      widget.recommendations.no_of_bathrooms,
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     ))
@@ -436,7 +419,7 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
                     padding:
                         EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                     child: Text(
-                      widget.home.presch,
+                      widget.recommendations.no_of_preschools,
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     )),
@@ -444,7 +427,7 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
                     padding:
                         EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                     child: Text(
-                      widget.home.school,
+                      widget.recommendations.no_of_schools,
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     )),
@@ -452,7 +435,7 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
                     padding:
                         EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                     child: Text(
-                      widget.home.parks,
+                      widget.recommendations.no_of_parks,
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     ))
@@ -507,7 +490,7 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
                     padding:
                         EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                     child: Text(
-                      widget.home.hawks,
+                      widget.recommendations.no_of_hawkers,
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     )),
@@ -515,7 +498,7 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
                     padding:
                         EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                     child: Text(
-                      widget.home.station,
+                      widget.recommendations.no_of_stations,
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     )),
@@ -523,7 +506,7 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
                     padding:
                         EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                     child: Text(
-                      widget.home.supermark,
+                      widget.recommendations.no_of_supermarkets,
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     ))
@@ -569,7 +552,7 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
                     padding:
                         EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                     child: Text(
-                      widget.home.malls,
+                      widget.recommendations.no_of_malls,
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     )),
@@ -577,7 +560,7 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
                     padding:
                         EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                     child: Text(
-                      widget.home.plotRatio,
+                      widget.recommendations.plotRatio,
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     )),

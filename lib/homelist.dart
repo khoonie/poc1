@@ -1,15 +1,134 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
+
 import 'package:flutter_signin_button/button_builder.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
+import 'package:poc1/recommendationDetails.dart';
 import 'package:poc1/repository/dataRepository.dart';
 import 'package:poc1/model/homes.dart';
+import 'package:poc1/model/recommendations.dart';
 import 'package:poc1/homeDetails.dart';
 import 'package:poc1/signup.dart';
 import 'package:poc1/survey.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert' as convert;
+import 'package:flutter_clean_calendar/flutter_clean_calendar.dart';
+import 'package:flutter_clean_calendar/clean_calendar_event.dart';
+import 'package:chat_list/chat_list.dart';
 
 import 'authentication.dart';
+
+class CustomListItem extends StatelessWidget {
+  const CustomListItem({
+    Key? key,
+    required this.thumbnail,
+    required this.title,
+    required this.subtitle1,
+    required this.subtitle2,
+    required this.subtitle3,
+    required this.jsonobj,
+  }) : super(key: key);
+
+  final Widget thumbnail;
+  final String title;
+  final String subtitle1;
+  final String subtitle2;
+  final String subtitle3;
+  final dynamic jsonobj;
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+        elevation: 8.0,
+        // margin from edge of the screen, and from each card vertically
+        margin: EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
+        child: Container(
+          decoration: BoxDecoration(color: Color.fromRGBO(64, 75, 96, 0.9)),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(
+                flex: 1,
+                child: thumbnail,
+              ),
+              Expanded(
+                flex: 4,
+                child: _PropDescription(
+                    title: title,
+                    subtitle1: subtitle1,
+                    subtitle2: subtitle2,
+                    subtitle3: subtitle3),
+              ),
+              InkWell(
+                  child: Icon(Icons.keyboard_arrow_right,
+                      color: Colors.white, size: 50.0),
+                  onTap: () {
+                    final rec = Recommendations.fromJson(jsonobj);
+                    _navigate3(BuildContext context) {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => RecommendationDetails(rec),
+                          ));
+                    }
+
+                    _navigate3(context);
+                  }),
+            ],
+          ),
+        ));
+  }
+}
+
+class _PropDescription extends StatelessWidget {
+  const _PropDescription({
+    Key? key,
+    required this.title,
+    required this.subtitle1,
+    required this.subtitle2,
+    required this.subtitle3,
+  }) : super(key: key);
+
+  final String title;
+  final String subtitle1;
+  final String subtitle2;
+  final String subtitle3;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+        // distance of wordings from edge of card
+        padding: const EdgeInsets.fromLTRB(10.0, 10.0, 0.0, 10.0),
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                title,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.0),
+              ),
+              const Padding(padding: EdgeInsets.symmetric(vertical: 2.0)),
+              Text(
+                subtitle1,
+                style: const TextStyle(color: Colors.white60, fontSize: 13.0),
+              ),
+              const Padding(padding: EdgeInsets.symmetric(vertical: 1.0)),
+              Text(
+                subtitle2,
+                style: const TextStyle(color: Colors.white60, fontSize: 13.0),
+              ),
+              const Padding(padding: EdgeInsets.symmetric(vertical: 1.0)),
+              Text(
+                subtitle3,
+                style:
+                    const TextStyle(color: Colors.greenAccent, fontSize: 13.0),
+              ),
+            ]));
+  }
+}
 
 class HomeList extends StatefulWidget {
   const HomeList({Key? key, required User user})
@@ -28,6 +147,12 @@ class _HomeListState extends State<HomeList> {
   late User _user;
   bool _isSigningOut = false;
   int _selectIndex = 0;
+  List? _recommendationList;
+  String? _savedUrlStr;
+  bool _invest = false;
+  int _pageNumber = 0;
+  late ScrollController _scrollController;
+  bool isLoading = false;
 
   Route _routeToSignInScreen() {
     return PageRouteBuilder(
@@ -55,17 +180,136 @@ class _HomeListState extends State<HomeList> {
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   void initState() {
     _user = widget._user;
+    _savedUrlStr = '';
+    _invest = false;
+
+    _scrollController = new ScrollController(initialScrollOffset: 5.0)
+      ..addListener(_scrollListener);
     super.initState();
+  }
+
+  Future<void> _fetchPage() async {
+    int nextPageNumber = _pageNumber + 1;
+    String urlStr =
+        "https://poc-backend-330115.as.r.appspot.com/recommendation?" +
+            _savedUrlStr! +
+            "&page=" +
+            nextPageNumber.toString() +
+            "&userid=" +
+            _user.uid;
+
+    var url = Uri.parse(urlStr);
+    EasyLoading.show(status: 'Fetching...');
+
+    http.Response response = await http.get(url);
+    EasyLoading.dismiss();
+
+    if (response.statusCode == 200) {
+      var tempResponse = response.body.replaceAll('NaN', '""');
+      var jsonResponse = convert.jsonDecode(tempResponse);
+      var recommendations = jsonResponse['recommendations'];
+
+      this.setState(() {
+        _recommendationList!.addAll(recommendations);
+        _pageNumber = nextPageNumber;
+        isLoading = false;
+      });
+    } else {
+      print('Request Failed: ${response.statusCode}');
+      EasyLoading.showError("Request Failed");
+
+      this.setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    Future<void> _pullRefresh() async {
+      this.setState(() {
+        _recommendationList!.clear();
+      });
+      String urlStr =
+          "https://poc-backend-330115.as.r.appspot.com/recommendation?page=0&" +
+              _savedUrlStr! +
+              "&userid=" +
+              _user.uid;
+      ;
+      var url = Uri.parse(urlStr);
+      //showSimpleNotification(Text("Refreshing Recommendations"),
+      //  background: Colors.blue, duration: Duration(seconds: 5));
+      EasyLoading.show(status: 'Re-calculating...');
+      http.Response response = await http.get(url);
+      EasyLoading.dismiss();
+      EasyLoading.showSuccess("Recommendations Ready");
+
+      if (response.statusCode == 200) {
+        //showSimpleNotification(Text("Recommendation Ready"),
+        //  background: Colors.green, duration: Duration(seconds: 5));
+        var tempResponse = response.body.replaceAll('NaN', '""');
+        var jsonResponse = convert.jsonDecode(tempResponse);
+        var recommendations = jsonResponse['recommendations'];
+
+        this.setState(() {
+          _recommendationList = recommendations;
+          print(_recommendationList);
+        });
+      } else {
+        print('Request Failed: ${response.statusCode}');
+        EasyLoading.showError("Request Failed");
+      }
+    }
+
+    Future<void> getPrediction(String urlStr, bool invest) async {
+      print("is this an investment property?");
+      print(invest);
+      if (urlStr != '') {
+        // survey not cancelled
+        urlStr =
+            "https://poc-backend-330115.as.r.appspot.com/recommendation?page=0&" +
+                urlStr +
+                "&userid=" +
+                _user.uid;
+        var url = Uri.parse(urlStr);
+        print("Userid = " + _user.uid);
+        EasyLoading.show(status: 'Calculating, Please Wait...');
+        http.Response response = await http.get(url);
+        EasyLoading.dismiss();
+        EasyLoading.showSuccess("Recommendations Ready");
+        if (response.statusCode == 200) {
+          var tempResponse = response.body.replaceAll('NaN', '""');
+          var jsonResponse = convert.jsonDecode(tempResponse);
+          var recommendations = jsonResponse['recommendations'];
+
+          this.setState(() {
+            _recommendationList = recommendations;
+            print(_recommendationList);
+          });
+        } else {
+          print('Request Failed: ${response.statusCode}');
+          EasyLoading.showError("Request Failed");
+          //showSimpleNotification(Text("Error Calculating Recommendation"),
+          //  background: Colors.red, duration: Duration(seconds: 5));
+        }
+      }
+    }
+
     final topAppBar = AppBar(
       elevation: 0.1,
-      backgroundColor: Color.fromRGBO(58, 66, 86, 1.0),
-      title: Text('Living Poc1'),
+      backgroundColor: Color.fromRGBO(58, 66, 86, 0.0),
+      title: Image.asset(
+        'assets/icon/Seeker Logo.png',
+        height: 64,
+      ),
       actions: <Widget>[
         IconButton(
           icon: Icon(Icons.list),
@@ -108,7 +352,42 @@ class _HomeListState extends State<HomeList> {
       ),
     );
 
-    final recommendApp = Container(child: (Text('Recommendations')));
+    final recommendApp = Container(
+        color: Colors.blueAccent,
+        child: RefreshIndicator(
+          child: ListView.builder(
+              scrollDirection: Axis.vertical,
+              controller: _scrollController,
+              shrinkWrap: true,
+              padding: const EdgeInsets.only(top: 20.0),
+              itemCount:
+                  _recommendationList == null ? 0 : _recommendationList!.length,
+              itemBuilder: (BuildContext context, int index) {
+                return CustomListItem(
+                  thumbnail: _getHomeIcon(
+                      _recommendationList![index]['property_type']),
+                  title: _recommendationList![index]['properties_name'] +
+                      (_recommendationList![index]['subdistrict'] == 'nan'
+                          ? ''
+                          : ' (' +
+                              _recommendationList![index]['subdistrict'] +
+                              ')'),
+                  subtitle1:
+                      _recommendationList![index]['no_of_bedrooms'].toString() +
+                          ' Bedrooms   ' +
+                          _recommendationList![index]['no_of_bathrooms']
+                              .toString() +
+                          ' Bathrooms',
+                  subtitle2: _recommendationList![index]['size'].toString() +
+                      ' SqFeet',
+                  subtitle3:
+                      'S\$ ' + _recommendationList![index]['price'].toString(),
+                  jsonobj: _recommendationList![index],
+                );
+              }),
+          onRefresh: _pullRefresh,
+        ));
+
     final surveyApp = Scaffold(
         body: Center(
             child: Column(
@@ -143,7 +422,14 @@ class _HomeListState extends State<HomeList> {
                     MaterialPageRoute(
                         builder: (context) => LivingCoSurvey(
                               user: _user,
-                            )));
+                            ))).then((value) {
+                  print(value); // URL string
+                  setState(() {
+                    _savedUrlStr = value["url"];
+                    _invest = value["invest"];
+                  });
+                  getPrediction(value["url"], value["invest"]);
+                });
               },
             )),
       ],
@@ -197,9 +483,127 @@ class _HomeListState extends State<HomeList> {
       ),
     );
 
-    final scheduleApp = Container(child: (Text('Scheduler')));
+    final Map<DateTime, List<CleanCalendarEvent>> _events = {
+      DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day): [
+        CleanCalendarEvent('House Viewing Appointment',
+            startTime: DateTime(DateTime.now().year, DateTime.now().month,
+                DateTime.now().day, 10, 0),
+            endTime: DateTime(DateTime.now().year, DateTime.now().month,
+                DateTime.now().day, 12, 0),
+            description: 'Meet with Miss Chamberlane at Orchard Rd',
+            color: Colors.blue.shade700),
+      ],
+      DateTime(
+          DateTime.now().year, DateTime.now().month, DateTime.now().day + 2): [
+        CleanCalendarEvent('New Condo Launch Reception',
+            startTime: DateTime(DateTime.now().year, DateTime.now().month,
+                DateTime.now().day + 2, 10, 0),
+            endTime: DateTime(DateTime.now().year, DateTime.now().month,
+                DateTime.now().day + 2, 12, 0),
+            description: 'Launch event at New World Center',
+            color: Colors.orange),
+        CleanCalendarEvent('House Viewing Appointment',
+            startTime: DateTime(DateTime.now().year, DateTime.now().month,
+                DateTime.now().day + 2, 14, 30),
+            endTime: DateTime(DateTime.now().year, DateTime.now().month,
+                DateTime.now().day + 2, 17, 0),
+            description: 'Meet with Mr Chiu at Beduk',
+            color: Colors.pink),
+      ],
+    };
+/*
+    Widget _buildEventList() {
+      return Expanded(
+        child: ListView.builder(
+          padding: EdgeInsets.all(0.0),
+          itemBuilder: (BuildContext context, int index) {
+            final CleanCalendarEvent event = _selectedEvents[index];
+            final String start =
+                DateFormat('HH:mm').format(event.startTime).toString();
+            final String end =
+                DateFormat('HH:mm').format(event.endTime).toString();
+            return ListTile(
+              contentPadding:
+                  EdgeInsets.only(left: 2.0, right: 8.0, top: 2.0, bottom: 2.0),
+              leading: Container(
+                width: 10.0,
+                color: event.color,
+              ),
+              title: Text(event.summary),
+              subtitle:
+                  event.description.isNotEmpty ? Text(event.description) : null,
+              trailing: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [Text(start), Text(end)],
+              ),
+              onTap: () {},
+            );
+          },
+          itemCount: _selectedEvents.length,
+        ),
+      );
+    }
+*/
+    void _handleNewDate(date) {
+      print('Date selected: $date');
+    }
+
+    final scheduleApp = Container(
+      child: Calendar(
+        startOnMonday: true,
+        weekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        events: _events,
+        onRangeSelected: (range) =>
+            print('Range is ${range.from}, ${range.to}'),
+        onDateSelected: (date) => _handleNewDate(date),
+        isExpandable: true,
+        selectedColor: Colors.pink,
+        todayColor: Colors.blue,
+        eventColor: Colors.grey,
+        locale: 'en_US',
+        todayButtonText: 'Today',
+        expandableDateFormat: 'EEEE, dd. MMMM yyyy',
+        dayOfWeekStyle: TextStyle(
+            color: Colors.black, fontWeight: FontWeight.w800, fontSize: 11),
+      ),
+    );
+    //_buildEventList()
+
     final agentIntroApp = Container(child: (Text('Agent Intro and Promo')));
-    final agentChatApp = Container(child: (Text('Agent Chat')));
+
+    final ScrollController _chatScrollController = ScrollController();
+    final List<Message> _messageList = [
+      Message(
+          content: "Hey can I view this house?",
+          ownerType: OwnerType.sender,
+          ownerName: "HomeBuyer1"),
+      Message(
+          content: "Sure, let's set up an appointment",
+          textColor: Colors.black38,
+          fontSize: 18.0,
+          ownerType: OwnerType.receiver,
+          ownerName: "Agent1"),
+      Message(
+          content:
+              "Can we meet at 3pm, at the corner of X and Y street? My contact is 111-222-333",
+          ownerType: OwnerType.sender,
+          ownerName: "HomeBuyer1"),
+      Message(
+          content: "No problem I have you down for 3pm. See you then!",
+          textColor: Colors.black38,
+          fontSize: 18.0,
+          ownerType: OwnerType.receiver,
+          ownerName: "Agent1"),
+      Message(
+          content: "Great, have a nice day.",
+          ownerType: OwnerType.sender,
+          ownerName: "HomeBuyer1"),
+    ];
+
+    final agentChatApp = Container(
+        child: ChatList(
+            children: _messageList, scrollController: _chatScrollController));
+
     final agentsAppSelections = DefaultTabController(
       length: 3,
       child: Scaffold(
@@ -362,6 +766,18 @@ class _HomeListState extends State<HomeList> {
     );
   }
 
+  _scrollListener() {
+    if (_scrollController.offset >=
+            _scrollController.position.maxScrollExtent &&
+        !_scrollController.position.outOfRange) {
+      setState(() {
+        isLoading = true;
+      });
+      print("Comes to bottom $isLoading");
+      _fetchPage();
+    }
+  }
+
   Widget _buildList(BuildContext context,
       List<DocumentSnapshot<Map<String, dynamic>>> snapshot) {
     return ListView(
@@ -459,17 +875,29 @@ class _HomeListState extends State<HomeList> {
     Widget homeIcon;
     if (type == "Condominium") {
       homeIcon = IconButton(
-        icon: Icon(Icons.home, color: Colors.white),
+        icon: Icon(
+          Icons.home,
+          color: Colors.white,
+          size: 50.0,
+        ),
         onPressed: () {},
       );
     } else if (type == "Apartment") {
       homeIcon = IconButton(
-        icon: Icon(Icons.apartment, color: Colors.white),
+        icon: Icon(
+          Icons.apartment,
+          color: Colors.white,
+          size: 40.0,
+        ),
         onPressed: () {},
       );
     } else {
       homeIcon = IconButton(
-        icon: Icon(Icons.house, color: Colors.white),
+        icon: Icon(
+          Icons.house,
+          color: Colors.white,
+          size: 40.0,
+        ),
         onPressed: () {},
       );
     }
