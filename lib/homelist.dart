@@ -1,8 +1,10 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-
+import 'package:flutter_firebase_chat_core/flutter_firebase_chat_core.dart';
 import 'package:flutter_signin_button/button_builder.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
 import 'package:poc1/recommendationDetails.dart';
@@ -15,10 +17,11 @@ import 'package:poc1/survey.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert' as convert;
 import 'package:flutter_clean_calendar/flutter_clean_calendar.dart';
-import 'package:flutter_clean_calendar/clean_calendar_event.dart';
+//import 'package:flutter_clean_calendar/clean_calendar_event.dart';
+import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:chat_list/chat_list.dart';
-
 import 'authentication.dart';
+import 'package:poc1/chat.dart';
 
 class CustomListItem extends StatelessWidget {
   const CustomListItem({
@@ -145,6 +148,7 @@ class HomeList extends StatefulWidget {
 class _HomeListState extends State<HomeList> {
   final DataRepository repository = DataRepository();
   late User _user;
+  late types.User _chatUser;
   bool _isSigningOut = false;
   int _selectIndex = 0;
   List? _recommendationList;
@@ -188,6 +192,7 @@ class _HomeListState extends State<HomeList> {
   @override
   void initState() {
     _user = widget._user;
+    _chatUser = types.User(id: _user.uid);
     _savedUrlStr = '';
     _invest = false;
 
@@ -266,6 +271,49 @@ class _HomeListState extends State<HomeList> {
       } else {
         print('Request Failed: ${response.statusCode}');
         EasyLoading.showError("Request Failed");
+      }
+    }
+
+    Future<void> updateUserProfile(
+        User currentUser, String urlStr, bool invest) async {
+      String tmpStr = '';
+      print("is this an investment property?");
+      print(invest);
+      if (urlStr != '') {
+        /// survey wasn't cancelled
+        ///
+        /// Data was constructed in parameters, so convert back to variables
+        tmpStr = "https://poc-backend-330115.as.r.appspot.com/recommendation?" +
+            urlStr;
+        var url = Uri.parse(tmpStr);
+
+        Map data = {
+          'age': url.queryParameters['age'],
+          'married': url.queryParameters['married'],
+          'kids_below_7': url.queryParameters['kids_below_7'],
+          'kids_between_7_and_12': url.queryParameters['kids_between_7_and_12'],
+          'household_size': url.queryParameters['household_size'],
+          'household_income': url.queryParameters['household_income'],
+        };
+        String body = json.encode(data);
+
+        urlStr = "https://poc-backend-330115.as.r.appspot.com/user/profile/" +
+            currentUser.uid;
+
+        http.Response response = await http.post(
+          Uri.parse(urlStr),
+          headers: <String, String>{
+            "Content-Type": "application/json; charset=UTF-8"
+          },
+          body: body,
+        );
+
+        if (response.statusCode == 200) {
+          EasyLoading.showInfo("Profile Updated Successfully");
+        } else {
+          print('Request Failed: ${response.statusCode}');
+          EasyLoading.showError("Profile Updated Failed");
+        }
       }
     }
 
@@ -424,11 +472,19 @@ class _HomeListState extends State<HomeList> {
                               user: _user,
                             ))).then((value) {
                   print(value); // URL string
+                  /// after returning from Survey save the url values
+                  /// and the investment or self-purchase boolean value
+
                   setState(() {
                     _savedUrlStr = value["url"];
                     _invest = value["invest"];
                   });
-                  getPrediction(value["url"], value["invest"]);
+
+                  /// update the user profile for v2
+                  updateUserProfile(_user, value["url"], value["invest"]);
+
+                  /// go get the prediction based on the returned values for v1
+                  //getPrediction(value["url"], value["invest"]);
                 });
               },
             )),
@@ -600,6 +656,88 @@ class _HomeListState extends State<HomeList> {
           ownerName: "HomeBuyer1"),
     ];
 
+    void _handlePressed(types.User otherUser, BuildContext context) async {
+      final room = await FirebaseChatCore.instance.createRoom(otherUser);
+      print(room);
+      _navigate(BuildContext context, types.Room room, types.User user) {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => FlyerChat(room: room, user: user)));
+      }
+
+      _navigate(context, room, otherUser);
+    }
+
+    Widget _buildContactList(BuildContext context, types.User user) {
+      return Card(
+        elevation: 3.0,
+        margin: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
+        child: Container(
+          decoration:
+              const BoxDecoration(color: Color.fromRGBO(34, 105, 196, 0.9)),
+          child: ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+              leading: Container(
+                  padding: const EdgeInsets.only(right: 12.0),
+                  decoration: const BoxDecoration(
+                      border: Border(
+                          right: BorderSide(width: 1.0, color: Colors.white))),
+                  child: ClipOval(
+                    child: Material(
+                      color: Colors.orange.withOpacity(0.9),
+                      child: Image.network(
+                        user.imageUrl!,
+//                        _firebaseUser.photoURL!,
+                        fit: BoxFit.fitHeight,
+                      ),
+                    ),
+                  )),
+              title: Text(
+                user.firstName!,
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              subtitle: Row(
+                children: <Widget>[
+                  const Icon(Icons.linear_scale, color: Colors.yellow),
+                  Text(
+                      DateTime.fromMillisecondsSinceEpoch(
+                              user.createdAt!.toInt())
+                          .toString(),
+                      style: const TextStyle(
+                          color: Colors.amber, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              trailing: InkWell(
+                  child: const Icon(
+                    Icons.keyboard_arrow_right,
+                    color: Colors.white,
+                    size: 30.0,
+                  ),
+                  onTap: () {
+                    print(user);
+                    _handlePressed(user, context);
+                  })),
+        ),
+      );
+    }
+
+    final chatListApp = StreamBuilder<List<types.User>>(
+        stream: FirebaseChatCore.instance.users(),
+        initialData: const [],
+        builder: (context, snapshot) {
+          return ListView(
+            scrollDirection: Axis.vertical,
+            shrinkWrap: true,
+            padding: const EdgeInsets.only(top: 20.0),
+            children: snapshot.data!
+                .map((e) => _buildContactList(context, e))
+                .toList(),
+          );
+        });
+
     final agentChatApp = Container(
         child: ChatList(
             children: _messageList, scrollController: _chatScrollController));
@@ -622,7 +760,7 @@ class _HomeListState extends State<HomeList> {
           ),
         ),
         body: TabBarView(
-          children: [scheduleApp, agentIntroApp, agentChatApp],
+          children: [scheduleApp, agentIntroApp, chatListApp],
         ),
       ),
     );
