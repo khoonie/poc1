@@ -274,6 +274,35 @@ class _HomeListState extends State<HomeList> {
       }
     }
 
+    Future<void> getPredictionV2(User currentUser, String urlStr) async {
+      /// This only needs user and page as GET params
+      if (urlStr != '') {
+        urlStr =
+            "https://poc-backend-330115.as.r.appspot.com/v2/recommendation/" +
+                currentUser.uid +
+                "?page=0";
+        print(urlStr);
+        var url = Uri.parse(urlStr);
+        EasyLoading.show(status: 'Calculating, Please Wait...');
+        http.Response response = await http.get(url);
+        EasyLoading.dismiss();
+        if (response.statusCode == 200) {
+          EasyLoading.showSuccess("Recommendation Ready");
+          var tempResponse = response.body.replaceAll('NaN', '""');
+          var jsonResponse = convert.jsonDecode(tempResponse);
+          var recommendations = jsonResponse['recommendations'];
+
+          this.setState(() {
+            _recommendationList = recommendations;
+            print(_recommendationList);
+          });
+        } else {
+          print('Request Failed: ${response.statusCode}');
+          EasyLoading.showError("Request Failed");
+        }
+      }
+    }
+
     Future<void> updateUserProfile(
         User currentUser, String urlStr, bool invest) async {
       String tmpStr = '';
@@ -309,7 +338,10 @@ class _HomeListState extends State<HomeList> {
         );
 
         if (response.statusCode == 200) {
+          EasyLoading.instance.displayDuration =
+              const Duration(milliseconds: 2000);
           EasyLoading.showInfo("Profile Updated Successfully");
+          getPredictionV2(_user, urlStr);
         } else {
           print('Request Failed: ${response.statusCode}');
           EasyLoading.showError("Profile Updated Failed");
@@ -966,7 +998,7 @@ class _HomeListState extends State<HomeList> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => HomeDetails(home),
+                              builder: (context) => HomeDetails(home, _user),
                             ));
                       }
 
@@ -998,7 +1030,7 @@ class _HomeListState extends State<HomeList> {
               Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => HomeDetails(home),
+                    builder: (context) => HomeDetails(home, _user),
                   ));
             }
 

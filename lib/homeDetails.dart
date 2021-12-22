@@ -1,8 +1,7 @@
-import 'dart:io';
-import 'dart:ui';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as https;
+import 'dart:convert';
 import 'package:flutter/material.dart';
-
 import 'package:intl/intl.dart';
 import 'package:poc1/repository/dataRepository.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -12,8 +11,9 @@ import 'model/homes.dart';
 typedef DialogCallback = void Function();
 
 class HomeDetails extends StatelessWidget {
+  final User _user;
   final Home home;
-  const HomeDetails(this.home);
+  const HomeDetails(this.home, this._user);
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -26,7 +26,7 @@ class HomeDetails extends StatelessWidget {
                 Navigator.pop(context);
               }),
         ),
-        body: HomeDetailForm(home),
+        body: HomeDetailForm(home, _user),
       ),
     );
   }
@@ -34,7 +34,8 @@ class HomeDetails extends StatelessWidget {
 
 class HomeDetailForm extends StatefulWidget {
   final Home home;
-  const HomeDetailForm(this.home);
+  final User _user;
+  const HomeDetailForm(this.home, this._user);
 
   @override
   _HomeDetailFormState createState() => _HomeDetailFormState();
@@ -55,6 +56,8 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
   double longitude = 0.0;
   double latitude = 0.0;
 
+  get http => null;
+
   Set<Marker> myMarker() {
     setState(() {
       _markers.add(Marker(
@@ -70,6 +73,33 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
     return _markers;
   }
 
+  Future<void> updateAnalytics(User currentUser, String propId) async {
+    String tmpStr = '';
+    tmpStr = "https://poc-backend-330115.as.r.appspot.com/analytics";
+
+    Map data = {
+      "type": "property_view",
+      "user_id": currentUser.uid,
+      "property_id": propId
+    };
+    String body = json.encode(data);
+
+    https.Response response = await https.post(
+      Uri.parse(tmpStr),
+      headers: <String, String>{
+        "Content-Type": "application/json; charset=UTF-8"
+      },
+      body: body,
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      print(response.statusCode);
+      print('Analytics updated for $propId');
+    } else {
+      print('Request Failed: ${response.statusCode}');
+    }
+  }
+
   @override
   void initState() {
     proptype = widget.home.proptype;
@@ -82,6 +112,7 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
       latitude = double.tryParse(widget.home.latitude)!;
     }
     mainLocation = LatLng(latitude, longitude);
+    updateAnalytics(widget._user, widget.home.id);
     super.initState();
   }
 
