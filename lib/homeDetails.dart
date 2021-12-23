@@ -94,7 +94,7 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       print(response.statusCode);
-      print('Analytics updated for $propId');
+      print('Analytics updated for Prop ID: $propId and User $currentUser');
     } else {
       print('Request Failed: ${response.statusCode}');
     }

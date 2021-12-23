@@ -204,12 +204,12 @@ class _HomeListState extends State<HomeList> {
   Future<void> _fetchPage() async {
     int nextPageNumber = _pageNumber + 1;
     String urlStr =
-        "https://poc-backend-330115.as.r.appspot.com/recommendation?" +
-            _savedUrlStr! +
-            "&page=" +
-            nextPageNumber.toString() +
-            "&userid=" +
-            _user.uid;
+        "https://poc-backend-330115.as.r.appspot.com/v2/recommendation/" +
+            //           _savedUrlStr! +
+            _user.uid +
+            "?page=" +
+            nextPageNumber.toString();
+    //    "&userid=" + _user.uid;
 
     var url = Uri.parse(urlStr);
     EasyLoading.show(status: 'Fetching...');
@@ -223,7 +223,9 @@ class _HomeListState extends State<HomeList> {
       var recommendations = jsonResponse['recommendations'];
 
       this.setState(() {
-        _recommendationList!.addAll(recommendations);
+        if (_recommendationList != null) {
+          _recommendationList!.addAll(recommendations);
+        }
         _pageNumber = nextPageNumber;
         isLoading = false;
       });
@@ -239,7 +241,7 @@ class _HomeListState extends State<HomeList> {
 
   @override
   Widget build(BuildContext context) {
-    Future<void> _pullRefresh() async {
+    Future<void> _pullRefresh2() async {
       this.setState(() {
         _recommendationList!.clear();
       });
@@ -260,6 +262,35 @@ class _HomeListState extends State<HomeList> {
       if (response.statusCode == 200) {
         //showSimpleNotification(Text("Recommendation Ready"),
         //  background: Colors.green, duration: Duration(seconds: 5));
+        var tempResponse = response.body.replaceAll('NaN', '""');
+        var jsonResponse = convert.jsonDecode(tempResponse);
+        var recommendations = jsonResponse['recommendations'];
+
+        this.setState(() {
+          _recommendationList = recommendations;
+          print(_recommendationList);
+        });
+      } else {
+        print('Request Failed: ${response.statusCode}');
+        EasyLoading.showError("Request Failed");
+      }
+    }
+
+    Future<void> _pullRefresh() async {
+      this.setState(() {
+        _recommendationList!.clear();
+      });
+      String urlStr =
+          "https://poc-backend-330115.as.r.appspot.com/v2/recommendation/" +
+              _user.uid +
+              "?page=0";
+      print(urlStr);
+      var url = Uri.parse(urlStr);
+      EasyLoading.show(status: 'Calculating, Please Wait...');
+      http.Response response = await http.get(url);
+      EasyLoading.dismiss();
+      if (response.statusCode == 200) {
+        EasyLoading.showSuccess("Recommendation Ready");
         var tempResponse = response.body.replaceAll('NaN', '""');
         var jsonResponse = convert.jsonDecode(tempResponse);
         var recommendations = jsonResponse['recommendations'];
@@ -340,7 +371,7 @@ class _HomeListState extends State<HomeList> {
         if (response.statusCode == 200) {
           EasyLoading.instance.displayDuration =
               const Duration(milliseconds: 2000);
-          EasyLoading.showInfo("Profile Updated Successfully");
+          EasyLoading.showInfo("Profile Updated - Getting Recommendations");
           getPredictionV2(_user, urlStr);
         } else {
           print('Request Failed: ${response.statusCode}');
