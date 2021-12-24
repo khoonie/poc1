@@ -1,3 +1,5 @@
+import 'homes.dart';
+
 class Recommendations {
   String user_id = '';
   String address = '';
@@ -51,9 +53,17 @@ class Recommendations {
   factory Recommendations.fromJson(Map<String, dynamic> json) =>
       _RecommendationsFromJson(json);
 
+  factory Recommendations.fromHome(Home home) => _RecommendationsFromHome(home);
+
   Map<String, dynamic> toJson() => _RecommendationsToJson(this);
   @override
   String toString() => "Home<$address>";
+
+  @override
+  bool operator ==(Object o) {
+    if (identical(this, o)) return true;
+    return o is Recommendations;
+  }
 }
 
 Map<String, dynamic> _RecommendationsToJson(Recommendations instance) =>
@@ -82,6 +92,33 @@ Map<String, dynamic> _RecommendationsToJson(Recommendations instance) =>
       'subdistrict': instance.subdistrict,
       'year_of_built': instance.year_of_built
     };
+
+Recommendations _RecommendationsFromHome(Home home) {
+  return Recommendations(
+      home.id,
+      home.address,
+      home.ID,
+      home.latitude,
+      home.leasing,
+      home.longitude,
+      home.baths,
+      home.bedrs,
+      home.hawks,
+      home.malls,
+      home.parks,
+      home.presch,
+      home.school,
+      home.station,
+      home.supermark,
+      home.plotRatio,
+      home.price,
+      home.propname,
+      home.proptype,
+      home.rental,
+      home.size,
+      home.subDist,
+      home.yearbuilt);
+}
 
 Recommendations _RecommendationsFromJson(Map<String, dynamic> json) {
   return Recommendations(

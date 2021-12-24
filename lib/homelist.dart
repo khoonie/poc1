@@ -32,6 +32,8 @@ class CustomListItem extends StatelessWidget {
     required this.subtitle2,
     required this.subtitle3,
     required this.jsonobj,
+    required this.user,
+    required this.propid,
   }) : super(key: key);
 
   final Widget thumbnail;
@@ -40,6 +42,36 @@ class CustomListItem extends StatelessWidget {
   final String subtitle2;
   final String subtitle3;
   final dynamic jsonobj;
+  final User user;
+  final String propid;
+
+  Future<void> updateAnalytics(User currentUser, int propId) async {
+    String tmpStr = '';
+    tmpStr = "https://poc-backend-330115.as.r.appspot.com/analytics";
+
+    Map data = {
+      "type": "property_view",
+      "user_id": currentUser.uid,
+      "property_id": propId
+    };
+    String body = json.encode(data);
+    print("Calling Analytics....");
+    http.Response response = await http.post(
+      Uri.parse(tmpStr),
+      headers: <String, String>{
+        "Content-Type": "application/json; charset=UTF-8"
+      },
+      body: body,
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      print(response.statusCode);
+      print('Analytics updated for Prop ID: $propId and User $currentUser');
+    } else {
+      print('Request Failed: ${response.statusCode}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -67,7 +99,14 @@ class CustomListItem extends StatelessWidget {
                   child: Icon(Icons.keyboard_arrow_right,
                       color: Colors.white, size: 50.0),
                   onTap: () {
-                    final rec = Recommendations.fromJson(jsonobj);
+                    var rec;
+                    if (jsonobj is Home) {
+                      rec = Recommendations.fromHome(jsonobj);
+                    } else {
+                      rec = Recommendations.fromJson(jsonobj);
+                    }
+                    print(propid);
+                    updateAnalytics(user, int.parse(propid));
                     _navigate3(BuildContext context) {
                       Navigator.push(
                           context,
@@ -126,8 +165,10 @@ class _PropDescription extends StatelessWidget {
               const Padding(padding: EdgeInsets.symmetric(vertical: 1.0)),
               Text(
                 subtitle3,
-                style:
-                    const TextStyle(color: Colors.greenAccent, fontSize: 13.0),
+                style: const TextStyle(
+                    color: Colors.greenAccent,
+                    fontSize: 14.0,
+                    fontStyle: FontStyle.italic),
               ),
             ]));
   }
@@ -202,7 +243,7 @@ class _HomeListState extends State<HomeList> {
   }
 
   Future<void> _fetchPage() async {
-    int nextPageNumber = _pageNumber + 1;
+    int nextPageNumber = _pageNumber;
     String urlStr =
         "https://poc-backend-330115.as.r.appspot.com/v2/recommendation/" +
             //           _savedUrlStr! +
@@ -210,9 +251,12 @@ class _HomeListState extends State<HomeList> {
             "?page=" +
             nextPageNumber.toString();
     //    "&userid=" + _user.uid;
+    print("--------------------------------");
+    print(urlStr);
+    print("--------------------------------");
 
     var url = Uri.parse(urlStr);
-    EasyLoading.show(status: 'Fetching...');
+    EasyLoading.show(status: 'Fetching More Recommendations...');
 
     http.Response response = await http.get(url);
     EasyLoading.dismiss();
@@ -221,7 +265,8 @@ class _HomeListState extends State<HomeList> {
       var tempResponse = response.body.replaceAll('NaN', '""');
       var jsonResponse = convert.jsonDecode(tempResponse);
       var recommendations = jsonResponse['recommendations'];
-
+      nextPageNumber = _pageNumber + 1;
+      EasyLoading.showSuccess("More Recommendations Fetched");
       this.setState(() {
         if (_recommendationList != null) {
           _recommendationList!.addAll(recommendations);
@@ -231,7 +276,7 @@ class _HomeListState extends State<HomeList> {
       });
     } else {
       print('Request Failed: ${response.statusCode}');
-      EasyLoading.showError("Request Failed");
+      EasyLoading.showError("Server Busy, Please try again");
 
       this.setState(() {
         isLoading = false;
@@ -241,44 +286,10 @@ class _HomeListState extends State<HomeList> {
 
   @override
   Widget build(BuildContext context) {
-    Future<void> _pullRefresh2() async {
-      this.setState(() {
-        _recommendationList!.clear();
-      });
-      String urlStr =
-          "https://poc-backend-330115.as.r.appspot.com/recommendation?page=0&" +
-              _savedUrlStr! +
-              "&userid=" +
-              _user.uid;
-      ;
-      var url = Uri.parse(urlStr);
-      //showSimpleNotification(Text("Refreshing Recommendations"),
-      //  background: Colors.blue, duration: Duration(seconds: 5));
-      EasyLoading.show(status: 'Re-calculating...');
-      http.Response response = await http.get(url);
-      EasyLoading.dismiss();
-      EasyLoading.showSuccess("Recommendations Ready");
-
-      if (response.statusCode == 200) {
-        //showSimpleNotification(Text("Recommendation Ready"),
-        //  background: Colors.green, duration: Duration(seconds: 5));
-        var tempResponse = response.body.replaceAll('NaN', '""');
-        var jsonResponse = convert.jsonDecode(tempResponse);
-        var recommendations = jsonResponse['recommendations'];
-
-        this.setState(() {
-          _recommendationList = recommendations;
-          print(_recommendationList);
-        });
-      } else {
-        print('Request Failed: ${response.statusCode}');
-        EasyLoading.showError("Request Failed");
-      }
-    }
-
     Future<void> _pullRefresh() async {
       this.setState(() {
-        _recommendationList!.clear();
+        //_recommendationList!.clear();
+        _pageNumber = 0;
       });
       String urlStr =
           "https://poc-backend-330115.as.r.appspot.com/v2/recommendation/" +
@@ -286,7 +297,7 @@ class _HomeListState extends State<HomeList> {
               "?page=0";
       print(urlStr);
       var url = Uri.parse(urlStr);
-      EasyLoading.show(status: 'Calculating, Please Wait...');
+      EasyLoading.show(status: 'Refreshing, Please Wait...');
       http.Response response = await http.get(url);
       EasyLoading.dismiss();
       if (response.statusCode == 200) {
@@ -294,14 +305,15 @@ class _HomeListState extends State<HomeList> {
         var tempResponse = response.body.replaceAll('NaN', '""');
         var jsonResponse = convert.jsonDecode(tempResponse);
         var recommendations = jsonResponse['recommendations'];
-
+        _recommendationList!.clear();
         this.setState(() {
           _recommendationList = recommendations;
+          _pageNumber = 1;
           print(_recommendationList);
         });
       } else {
         print('Request Failed: ${response.statusCode}');
-        EasyLoading.showError("Request Failed");
+        EasyLoading.showError("Server Busy, Please Try Again Later");
       }
     }
 
@@ -329,7 +341,7 @@ class _HomeListState extends State<HomeList> {
           });
         } else {
           print('Request Failed: ${response.statusCode}');
-          EasyLoading.showError("Request Failed");
+          EasyLoading.showError("Server Busy , Please Try Again");
         }
       }
     }
@@ -380,7 +392,7 @@ class _HomeListState extends State<HomeList> {
       }
     }
 
-    Future<void> getPrediction(String urlStr, bool invest) async {
+    Future<void> getPredictionV1(String urlStr, bool invest) async {
       print("is this an investment property?");
       print(invest);
       if (urlStr != '') {
@@ -416,7 +428,7 @@ class _HomeListState extends State<HomeList> {
 
     final topAppBar = AppBar(
       elevation: 0.1,
-      backgroundColor: Color.fromRGBO(58, 66, 86, 0.0),
+      backgroundColor: Colors.blue.shade100,
       title: Image.asset(
         'assets/icon/Seeker Logo.png',
         height: 64,
@@ -437,13 +449,14 @@ class _HomeListState extends State<HomeList> {
               if (!snapshot.hasData) return LinearProgressIndicator();
               return _buildList(context, snapshot.data!.docs);
             }));
+
     final promoApp = Container(child: (Text('Best Sellers')));
     final popularApp = Container(child: (Text('Popular')));
     final listAppSelections = DefaultTabController(
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.orange,
+          backgroundColor: Colors.blue,
           flexibleSpace: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -475,84 +488,87 @@ class _HomeListState extends State<HomeList> {
                   _recommendationList == null ? 0 : _recommendationList!.length,
               itemBuilder: (BuildContext context, int index) {
                 return CustomListItem(
-                  thumbnail: _getHomeIcon(
-                      _recommendationList![index]['property_type']),
-                  title: _recommendationList![index]['properties_name'] +
-                      (_recommendationList![index]['subdistrict'] == 'nan'
-                          ? ''
-                          : ' (' +
-                              _recommendationList![index]['subdistrict'] +
-                              ')'),
-                  subtitle1:
-                      _recommendationList![index]['no_of_bedrooms'].toString() +
-                          ' Bedrooms   ' +
-                          _recommendationList![index]['no_of_bathrooms']
-                              .toString() +
-                          ' Bathrooms',
-                  subtitle2: _recommendationList![index]['size'].toString() +
-                      ' SqFeet',
-                  subtitle3:
-                      'S\$ ' + _recommendationList![index]['price'].toString(),
-                  jsonobj: _recommendationList![index],
-                );
+                    thumbnail: _getHomeIcon(
+                        _recommendationList![index]['property_type']),
+                    title: _recommendationList![index]['properties_name'] +
+                        (_recommendationList![index]['subdistrict'] == 'nan'
+                            ? ''
+                            : ' (' +
+                                _recommendationList![index]['subdistrict'] +
+                                ')'),
+                    subtitle1: _recommendationList![index]['no_of_bedrooms']
+                            .toString() +
+                        ' Bedrooms   ' +
+                        _recommendationList![index]['no_of_bathrooms']
+                            .toString() +
+                        ' Bathrooms',
+                    subtitle2: _recommendationList![index]['size'].toString() +
+                        ' SqFeet',
+                    subtitle3: 'S\$ ' +
+                        _recommendationList![index]['price'].toString(),
+                    jsonobj: _recommendationList![index],
+                    user: _user,
+                    propid:
+                        _recommendationList![index]['property_id'].toString());
               }),
           onRefresh: _pullRefresh,
         ));
 
     final surveyApp = Scaffold(
+        backgroundColor: Colors.blue.shade100,
         body: Center(
             child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Padding(
-          padding: EdgeInsets.all(10.0),
-          child: Text("LivingCo Survey",
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 30,
-                  fontFamily: 'Roboto')),
-        ),
-        Padding(
-          padding: EdgeInsets.all(10.0),
-          child: Text(
-              "This survey will gather information to help us better understand the properties you seek",
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  fontFamily: 'Roboto')),
-        ),
-        Padding(
-            padding: EdgeInsets.all(10.0),
-            child: SignInButtonBuilder(
-              icon: Icons.surfing,
-              text: 'Start the Survey',
-              backgroundColor: Colors.blueGrey,
-              onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => LivingCoSurvey(
-                              user: _user,
-                            ))).then((value) {
-                  print(value); // URL string
-                  /// after returning from Survey save the url values
-                  /// and the investment or self-purchase boolean value
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Padding(
+              padding: EdgeInsets.all(10.0),
+              child: Text("LivingCo Survey",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 30,
+                      fontFamily: 'Roboto')),
+            ),
+            Padding(
+              padding: EdgeInsets.all(10.0),
+              child: Text(
+                  "This survey will gather information to help us better understand the properties you seek",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      fontFamily: 'Roboto')),
+            ),
+            Padding(
+                padding: EdgeInsets.symmetric(horizontal: 5.0, vertical: 20.0),
+                child: SignInButtonBuilder(
+                  icon: Icons.content_paste_outlined,
+                  text: 'Click to Start the Survey',
+                  backgroundColor: Colors.blueGrey,
+                  onPressed: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => LivingCoSurvey(
+                                  user: _user,
+                                ))).then((value) {
+                      print(value); // URL string
+                      /// after returning from Survey save the url values
+                      /// and the investment or self-purchase boolean value
 
-                  setState(() {
-                    _savedUrlStr = value["url"];
-                    _invest = value["invest"];
-                  });
+                      setState(() {
+                        _savedUrlStr = value["url"];
+                        _invest = value["invest"];
+                      });
 
-                  /// update the user profile for v2
-                  updateUserProfile(_user, value["url"], value["invest"]);
+                      /// update the user profile for v2
+                      updateUserProfile(_user, value["url"], value["invest"]);
 
-                  /// go get the prediction based on the returned values for v1
-                  //getPrediction(value["url"], value["invest"]);
-                });
-              },
-            )),
-      ],
-    )));
+                      /// go get the prediction based on the returned values for v1
+                      //getPrediction(value["url"], value["invest"]);
+                    });
+                  },
+                )),
+          ],
+        )));
 
     final ideasAppSelections = DefaultTabController(
       length: 2,
@@ -935,10 +951,11 @@ class _HomeListState extends State<HomeList> {
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         selectedFontSize: 15,
-        selectedIconTheme: IconThemeData(color: Colors.amberAccent, size: 40),
+        selectedIconTheme: IconThemeData(color: Colors.white, size: 40),
         selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold),
-        selectedItemColor: Colors.amberAccent,
-        backgroundColor: Colors.orangeAccent,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.blue.shade200,
+        backgroundColor: Colors.blue.shade700,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.list),
@@ -985,8 +1002,25 @@ class _HomeListState extends State<HomeList> {
       scrollDirection: Axis.vertical,
       shrinkWrap: true,
       padding: const EdgeInsets.only(top: 20.0),
-      children: snapshot.map((data) => _buildListItem2(context, data)).toList(),
+      children: snapshot.map((data) => _buildListItem3(context, data)).toList(),
     );
+  }
+
+  Widget _buildListItem3(
+      BuildContext context, DocumentSnapshot<Map<String, dynamic>> snapshot) {
+    final home = Home.fromSnapshot(snapshot);
+    if (home == null) {
+      return Container();
+    }
+    return CustomListItem(
+        thumbnail: _getHomeIcon(home.proptype),
+        title: home.propname == null ? "" : home.propname,
+        subtitle1: home.bedrs + ' Bedrooms   ' + home.baths + ' Bathrooms',
+        subtitle2: home.size + ' SqFeet',
+        subtitle3: ' S\$ ' + home.price,
+        jsonobj: home,
+        user: _user,
+        propid: home.id);
   }
 
   Widget _buildListItem2(

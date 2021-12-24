@@ -80,10 +80,10 @@ class _HomeDetailFormState extends State<HomeDetailForm> {
     Map data = {
       "type": "property_view",
       "user_id": currentUser.uid,
-      "property_id": propId
+      "property_id": int.parse(propId)
     };
     String body = json.encode(data);
-
+    print("Calling Analytics....");
     https.Response response = await https.post(
       Uri.parse(tmpStr),
       headers: <String, String>{

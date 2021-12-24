@@ -63,6 +63,12 @@ class Home {
   Map<String, dynamic> toJson() => _HomeToJson(this);
   @override
   String toString() => "Home<$address>";
+
+  //@override
+  //bool operator ==(Object o) {
+  //  if (identical(this, o)) return true;
+  //  return o is Home;
+  //}
 }
 
 Home _HomeFromJson(Map<String, dynamic> json) {

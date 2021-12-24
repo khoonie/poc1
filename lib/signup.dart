@@ -10,10 +10,11 @@ import 'email_login.dart';
 import 'email_signup.dart';
 
 class SignUp extends StatelessWidget {
-  final String title = "Sign Up";
+  final String title = "LivingCo Sign Up";
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        backgroundColor: Colors.blue.shade100,
         appBar: AppBar(
           title: Text(this.title),
         ),
