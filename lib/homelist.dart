@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -79,12 +79,22 @@ class CustomListItem extends StatelessWidget {
         // margin from edge of the screen, and from each card vertically
         margin: EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
         child: Container(
-          decoration: BoxDecoration(color: Color.fromRGBO(64, 75, 96, 0.9)),
+          decoration: BoxDecoration(
+              gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF00CCFF),
+                    const Color(0xFF000000),
+                  ],
+                  begin: const Alignment(0.5, -1.5),
+                  end: const Alignment(0.5, 1.0),
+                  stops: [0.0, 1.0],
+                  tileMode: TileMode.clamp)),
+          //color: Color.fromRGBO(64, 75, 96, 0.9)
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Expanded(
-                flex: 1,
+                flex: 2,
                 child: thumbnail,
               ),
               Expanded(
@@ -124,7 +134,7 @@ class CustomListItem extends StatelessWidget {
 }
 
 class _PropDescription extends StatelessWidget {
-  const _PropDescription({
+  _PropDescription({
     Key? key,
     required this.title,
     required this.subtitle1,
@@ -136,7 +146,7 @@ class _PropDescription extends StatelessWidget {
   final String subtitle1;
   final String subtitle2;
   final String subtitle3;
-
+  NumberFormat formatter = NumberFormat('###,###,000');
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -164,7 +174,7 @@ class _PropDescription extends StatelessWidget {
               ),
               const Padding(padding: EdgeInsets.symmetric(vertical: 1.0)),
               Text(
-                subtitle3,
+                'S\$ ' + formatter.format(int.parse(subtitle3)),
                 style: const TextStyle(
                     color: Colors.greenAccent,
                     fontSize: 14.0,
@@ -198,7 +208,7 @@ class _HomeListState extends State<HomeList> {
   int _pageNumber = 0;
   late ScrollController _scrollController;
   bool isLoading = false;
-
+  String? showMessage;
   Route _routeToSignInScreen() {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) => SignUp(),
@@ -244,19 +254,29 @@ class _HomeListState extends State<HomeList> {
 
   Future<void> _fetchPage() async {
     int nextPageNumber = _pageNumber;
-    String urlStr =
-        "https://poc-backend-330115.as.r.appspot.com/v2/recommendation/" +
-            //           _savedUrlStr! +
-            _user.uid +
-            "?page=" +
-            nextPageNumber.toString();
-    //    "&userid=" + _user.uid;
+    String urlStr = '';
+    if (_invest) {
+      showMessage = 'Fetching More Investment Suggestions...';
+      urlStr =
+          "https://poc-backend-330115.as.r.appspot.com/v2/recommendation/investment/" +
+              _user.uid +
+              "?page=" +
+              nextPageNumber.toString();
+    } else {
+      showMessage = 'Fetching More Own-Stay Recommendations...';
+      urlStr =
+          "https://poc-backend-330115.as.r.appspot.com/v2/recommendation/" +
+              _user.uid +
+              "?page=" +
+              nextPageNumber.toString();
+    }
+
     print("--------------------------------");
     print(urlStr);
     print("--------------------------------");
 
     var url = Uri.parse(urlStr);
-    EasyLoading.show(status: 'Fetching More Recommendations...');
+    EasyLoading.show(status: showMessage);
 
     http.Response response = await http.get(url);
     EasyLoading.dismiss();
@@ -266,7 +286,7 @@ class _HomeListState extends State<HomeList> {
       var jsonResponse = convert.jsonDecode(tempResponse);
       var recommendations = jsonResponse['recommendations'];
       nextPageNumber = _pageNumber + 1;
-      EasyLoading.showSuccess("More Recommendations Fetched");
+      EasyLoading.showSuccess("Done. Please keep Scrolling.");
       this.setState(() {
         if (_recommendationList != null) {
           _recommendationList!.addAll(recommendations);
@@ -291,10 +311,19 @@ class _HomeListState extends State<HomeList> {
         //_recommendationList!.clear();
         _pageNumber = 0;
       });
-      String urlStr =
-          "https://poc-backend-330115.as.r.appspot.com/v2/recommendation/" +
-              _user.uid +
-              "?page=0";
+      String urlStr = '';
+      if (_invest) {
+        urlStr =
+            "https://poc-backend-330115.as.r.appspot.com/v2/recommendation/investment/" +
+                _user.uid +
+                "?page=0";
+      } else {
+        urlStr =
+            "https://poc-backend-330115.as.r.appspot.com/v2/recommendation/" +
+                _user.uid +
+                "?page=0";
+      }
+
       print(urlStr);
       var url = Uri.parse(urlStr);
       EasyLoading.show(status: 'Refreshing, Please Wait...');
@@ -317,31 +346,77 @@ class _HomeListState extends State<HomeList> {
       }
     }
 
+    Future<String> showErrorDialog() async {
+      return await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          content: const Text(
+              'Server Busy. Discard survey or try getting recommendations again?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, 'Cancel');
+              },
+              child: const Text('Discard'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, 'Retry');
+              },
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
     Future<void> getPredictionV2(User currentUser, String urlStr) async {
       /// This only needs user and page as GET params
-      if (urlStr != '') {
-        urlStr =
-            "https://poc-backend-330115.as.r.appspot.com/v2/recommendation/" +
-                currentUser.uid +
-                "?page=0";
-        print(urlStr);
-        var url = Uri.parse(urlStr);
-        EasyLoading.show(status: 'Calculating, Please Wait...');
-        http.Response response = await http.get(url);
-        EasyLoading.dismiss();
-        if (response.statusCode == 200) {
-          EasyLoading.showSuccess("Recommendation Ready");
-          var tempResponse = response.body.replaceAll('NaN', '""');
-          var jsonResponse = convert.jsonDecode(tempResponse);
-          var recommendations = jsonResponse['recommendations'];
+      String? showMessage;
+      bool retryCall = true;
 
-          this.setState(() {
-            _recommendationList = recommendations;
-            print(_recommendationList);
-          });
+      if (urlStr != '') {
+        if (_invest) {
+          showMessage = 'Calculating Investment Suggestions...';
+          urlStr =
+              "https://poc-backend-330115.as.r.appspot.com/v2/recommendation/investment/" +
+                  currentUser.uid +
+                  "?page=0";
         } else {
-          print('Request Failed: ${response.statusCode}');
-          EasyLoading.showError("Server Busy , Please Try Again");
+          showMessage = 'Calculating Own-Stay Recommendations...';
+          urlStr =
+              "https://poc-backend-330115.as.r.appspot.com/v2/recommendation/" +
+                  currentUser.uid +
+                  "?page=0";
+        }
+        print('****** The URL to call is $urlStr');
+        var url = Uri.parse(urlStr);
+        while (retryCall) {
+          EasyLoading.show(status: showMessage);
+          http.Response response = await http.get(url);
+          EasyLoading.dismiss();
+          if (response.statusCode == 200) {
+            EasyLoading.showSuccess("Ready - Please go to Recommendations");
+            var tempResponse = response.body.replaceAll('NaN', '""');
+            var jsonResponse = convert.jsonDecode(tempResponse);
+            var recommendations = jsonResponse['recommendations'];
+
+            this.setState(() {
+              _recommendationList = recommendations;
+              print(_recommendationList);
+            });
+            retryCall = false;
+            //var result = await showErrorDialog();
+            //print(result);
+          } else {
+            print('Request Failed: ${response.statusCode}');
+            //EasyLoading.showError("Server Busy , Please Try Again");
+            var result = await showErrorDialog();
+            print(result);
+            if (result == 'Discard') {
+              retryCall = false;
+            }
+          }
         }
       }
     }
@@ -371,7 +446,7 @@ class _HomeListState extends State<HomeList> {
 
         urlStr = "https://poc-backend-330115.as.r.appspot.com/user/profile/" +
             currentUser.uid;
-
+        EasyLoading.show(status: 'Updating Profile, Please Wait...');
         http.Response response = await http.post(
           Uri.parse(urlStr),
           headers: <String, String>{
@@ -379,7 +454,7 @@ class _HomeListState extends State<HomeList> {
           },
           body: body,
         );
-
+        EasyLoading.dismiss(animation: true);
         if (response.statusCode == 200) {
           EasyLoading.instance.displayDuration =
               const Duration(milliseconds: 2000);
@@ -387,7 +462,7 @@ class _HomeListState extends State<HomeList> {
           getPredictionV2(_user, urlStr);
         } else {
           print('Request Failed: ${response.statusCode}');
-          EasyLoading.showError("Profile Updated Failed");
+          EasyLoading.showError("Profile Update Failed");
         }
       }
     }
@@ -477,7 +552,7 @@ class _HomeListState extends State<HomeList> {
     );
 
     final recommendApp = Container(
-        color: Colors.blueAccent,
+        color: _invest == true ? Colors.green.shade200 : Colors.blue.shade200,
         child: RefreshIndicator(
           child: ListView.builder(
               scrollDirection: Axis.vertical,
@@ -488,8 +563,10 @@ class _HomeListState extends State<HomeList> {
                   _recommendationList == null ? 0 : _recommendationList!.length,
               itemBuilder: (BuildContext context, int index) {
                 return CustomListItem(
-                    thumbnail: _getHomeIcon(
-                        _recommendationList![index]['property_type']),
+                    thumbnail: Image.network(
+                      'https://images.unsplash.com/photo-1475855581690-80accde3ae2b?ixlib=rb-1.2.1&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=400&fit=max',
+                    ),
+                    //_getHomeIcon(_recommendationList![index]['property_type']),
                     title: _recommendationList![index]['properties_name'] +
                         (_recommendationList![index]['subdistrict'] == 'nan'
                             ? ''
@@ -504,8 +581,7 @@ class _HomeListState extends State<HomeList> {
                         ' Bathrooms',
                     subtitle2: _recommendationList![index]['size'].toString() +
                         ' SqFeet',
-                    subtitle3: 'S\$ ' +
-                        _recommendationList![index]['price'].toString(),
+                    subtitle3: _recommendationList![index]['price'].toString(),
                     jsonobj: _recommendationList![index],
                     user: _user,
                     propid:
@@ -646,39 +722,7 @@ class _HomeListState extends State<HomeList> {
             color: Colors.pink),
       ],
     };
-/*
-    Widget _buildEventList() {
-      return Expanded(
-        child: ListView.builder(
-          padding: EdgeInsets.all(0.0),
-          itemBuilder: (BuildContext context, int index) {
-            final CleanCalendarEvent event = _selectedEvents[index];
-            final String start =
-                DateFormat('HH:mm').format(event.startTime).toString();
-            final String end =
-                DateFormat('HH:mm').format(event.endTime).toString();
-            return ListTile(
-              contentPadding:
-                  EdgeInsets.only(left: 2.0, right: 8.0, top: 2.0, bottom: 2.0),
-              leading: Container(
-                width: 10.0,
-                color: event.color,
-              ),
-              title: Text(event.summary),
-              subtitle:
-                  event.description.isNotEmpty ? Text(event.description) : null,
-              trailing: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [Text(start), Text(end)],
-              ),
-              onTap: () {},
-            );
-          },
-          itemCount: _selectedEvents.length,
-        ),
-      );
-    }
-*/
+
     void _handleNewDate(date) {
       print('Date selected: $date');
     }
@@ -702,7 +746,6 @@ class _HomeListState extends State<HomeList> {
             color: Colors.black, fontWeight: FontWeight.w800, fontSize: 11),
       ),
     );
-    //_buildEventList()
 
     final agentIntroApp = Container(child: (Text('Agent Intro and Promo')));
 
@@ -1017,7 +1060,7 @@ class _HomeListState extends State<HomeList> {
         title: home.propname == null ? "" : home.propname,
         subtitle1: home.bedrs + ' Bedrooms   ' + home.baths + ' Bathrooms',
         subtitle2: home.size + ' SqFeet',
-        subtitle3: ' S\$ ' + home.price,
+        subtitle3: home.price,
         jsonobj: home,
         user: _user,
         propid: home.id);

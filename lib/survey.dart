@@ -83,8 +83,6 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
                                     urlString + questionResult.id!.id + '=1&';
                                 if (questionResult.id!.id == 'investment') {
                                   _invest = true;
-                                } else {
-                                  _invest = false;
                                 }
                               } else if (questionResult.result ==
                                   BooleanResult.NONE) {
@@ -123,6 +121,8 @@ class _LivingCoSurveyState extends State<LivingCoSurvey> {
                       urlString = urlString.substring(
                           0, urlString.length - 1); // remove last '&'
                       //getPrediction(urlString);
+                      print('the investment value is ');
+                      print(_invest);
                       _returnToHomelist(urlString, _invest);
                     },
                     task: task,
