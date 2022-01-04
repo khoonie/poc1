@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "280925675526-g8ti9d5pjsl8fofsss75d4rf8qp7v0vo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mudoki.poc1",
+            "certificate_hash": "afbee9df302a0d0b7cac178abbf74764b5f4905b"
+          }
+        },
+        {
           "client_id": "280925675526-op9oqj8b6j8kp7pmpk0pd23mvdf4cq99.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
