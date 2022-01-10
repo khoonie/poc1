@@ -7,6 +7,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_firebase_chat_core/flutter_firebase_chat_core.dart';
 import 'package:flutter_signin_button/button_builder.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
+import 'package:poc1/homemap.dart';
 import 'package:poc1/recommendationDetails.dart';
 import 'package:poc1/repository/dataRepository.dart';
 import 'package:poc1/model/homes.dart';
@@ -255,15 +256,16 @@ class _HomeListState extends State<HomeList> {
   Future<void> _fetchPage() async {
     int nextPageNumber = _pageNumber;
     String urlStr = '';
+    String moreStr = nextPageNumber == 0 ? ' Previous ' : ' More ';
     if (_invest) {
-      showMessage = 'Fetching More Investment Suggestions...';
+      showMessage = 'Fetching' + moreStr + 'Investment Suggestions...';
       urlStr =
           "https://poc-backend-330115.as.r.appspot.com/v2/recommendation/investment/" +
               _user.uid +
               "?page=" +
               nextPageNumber.toString();
     } else {
-      showMessage = 'Fetching More Own-Stay Recommendations...';
+      showMessage = 'Fetching' + moreStr + 'Own-Stay Recommendations...';
       urlStr =
           "https://poc-backend-330115.as.r.appspot.com/v2/recommendation/" +
               _user.uid +
@@ -289,7 +291,11 @@ class _HomeListState extends State<HomeList> {
       EasyLoading.showSuccess("Done. Please keep Scrolling.");
       this.setState(() {
         if (_recommendationList != null) {
+          // for the case when coming in to fetch more items
           _recommendationList!.addAll(recommendations);
+        } else {
+          // for the case when coming in without doing Survey
+          _recommendationList = recommendations;
         }
         _pageNumber = nextPageNumber;
         isLoading = false;
@@ -646,8 +652,12 @@ class _HomeListState extends State<HomeList> {
           ],
         )));
 
+    final mapApp = Scaffold(
+        backgroundColor: Colors.lightBlue,
+        body: HomeMap(_recommendationList, _user));
+
     final ideasAppSelections = DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           flexibleSpace: Column(
@@ -657,13 +667,14 @@ class _HomeListState extends State<HomeList> {
                 tabs: [
                   Tab(text: 'Survey'),
                   Tab(text: 'Recommendations'),
+                  Tab(text: 'Map')
                 ],
               )
             ],
           ),
         ),
         body: TabBarView(
-          children: [surveyApp, recommendApp],
+          children: [surveyApp, recommendApp, mapApp],
         ),
       ),
     );
